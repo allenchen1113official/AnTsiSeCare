@@ -58,10 +58,13 @@
 | UI 元件庫 | React Native Paper | Material Design 3、無障礙支援好 |
 | 導航 | React Navigation v6 | 業界標準 |
 | 地圖 | react-native-maps | Google Maps 整合 |
-| 推播通知 | Firebase Cloud Messaging | iOS + Android 統一 |
+| 推播通知 | Firebase Cloud Messaging | iOS + Android 統一，多語言 payload |
 | 本地儲存 | MMKV | 高效能本地儲存（替代 AsyncStorage） |
 | 離線支援 | WatermelonDB | 本地資料庫，離線模式 |
 | 無障礙 | React Native Accessibility API | 符合 WCAG 2.1 |
+| **多語言（i18n）** | **i18next + react-i18next** | **支援 zh-TW / id / en，自動偵測裝置語言** |
+| **語言偵測** | **react-native-localize** | **偵測裝置語言，印尼系統自動切換** |
+| **翻譯 AI** | **Claude API (claude-sonnet-4-6)** | **照護日誌自動翻譯（中文↔印尼語）** |
 
 ### 2.2 Web 管理後台
 
@@ -115,15 +118,16 @@ App
 ```
 services/
 ├── auth-service/          # 認證授權（JWT, OAuth2）
-├── user-service/          # 使用者管理
+├── user-service/          # 使用者管理（含語言偏好）
 ├── care-plan-service/     # 照護計畫
 ├── booking-service/       # 服務預約
-├── care-log-service/      # 照護日誌
+├── care-log-service/      # 照護日誌（含多語言翻譯）
 ├── health-service/        # 健康監測
-├── emergency-service/     # 緊急通報
+├── emergency-service/     # 緊急通報（多語言語音）
 ├── resource-service/      # 長照資源地圖
-├── notification-service/  # 推播通知
-└── report-service/        # 報表統計
+├── notification-service/  # 推播通知（依語言推送）
+├── translation-service/   # 多語言翻譯服務（Claude API + 術語表）
+└── report-service/        # 報表統計（多語言輸出）
 ```
 
 ### 3.3 認證與授權
