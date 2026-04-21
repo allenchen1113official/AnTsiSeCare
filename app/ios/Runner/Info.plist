@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- App 基本資訊 -->
+    <key>CFBundleDisplayName</key>
+    <string>安心照護</string>
+    <key>CFBundleIdentifier</key>
+    <string>tw.miaoli.antsicare</string>
+    <key>CFBundleName</key>
+    <string>AnTsiSeCare</string>
+    <key>CFBundleShortVersionString</key>
+    <string>$(FLUTTER_BUILD_NAME)</string>
+    <key>CFBundleVersion</key>
+    <string>$(FLUTTER_BUILD_NUMBER)</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+
+    <!-- 支援語言 -->
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>zh-Hant</string><!-- 繁體中文 -->
+        <string>id</string>     <!-- 印尼語 -->
+        <string>vi</string>     <!-- 越南語 -->
+        <string>th</string>     <!-- 泰語 -->
+        <string>en</string>     <!-- 英語 -->
+    </array>
+
+    <!-- 方向：僅直式 -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+    </array>
+
+    <!-- 隱私權說明（App Store 審核必填） -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>安心照護需要您的位置以傳送緊急 SOS 求救座標給家屬，以及顯示附近的長照資源機構。
+(AnTsiSeCare memerlukan lokasi Anda untuk mengirim koordinat darurat SOS dan menampilkan fasilitas perawatan terdekat.)</string>
+
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>安心照護需要在背景取得位置以提供即時 SOS 緊急通報。</string>
+
+    <key>NSMicrophoneUsageDescription</key>
+    <string>安心照護需要麥克風權限以支援語音輸入照護紀錄（支援印尼語、中文語音）。
+(AnTsiSeCare memerlukan mikrofon untuk input suara catatan perawatan dalam bahasa Indonesia.)</string>
+
+    <key>NSCameraUsageDescription</key>
+    <string>安心照護需要相機權限以拍攝照護現場照片並附加至照護日誌。
+(AnTsiSeCare memerlukan kamera untuk mengambil foto kondisi perawatan.)</string>
+
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>安心照護需要存取相簿以選取照護相關照片。</string>
+
+    <key>NSContactsUsageDescription</key>
+    <string>安心照護需要聯絡人權限以設定緊急聯絡人。</string>
+
+    <!-- Google Maps -->
+    <key>GMSApiKey</key>
+    <string>$(GOOGLE_MAPS_API_KEY)</string>
+
+    <!-- Firebase / Push Notifications -->
+    <key>FirebaseAppDelegateProxyEnabled</key>
+    <false/>
+
+    <!-- 推播通知背景模式 -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>fetch</string>
+        <string>remote-notification</string>
+    </array>
+
+    <!-- 最低支援 iOS 版本（Firebase SDK 要求） -->
+    <key>MinimumOSVersion</key>
+    <string>13.0</string>
+
+    <!-- ATS — 允許 data.mohw.gov.tw 政府開放資料（HTTP）-->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <false/>
+        <key>NSExceptionDomains</key>
+        <dict>
+            <key>data.mohw.gov.tw</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+            </dict>
+            <key>data.gov.tw</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+            </dict>
+        </dict>
+    </dict>
+</dict>
+</plist>

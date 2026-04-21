@@ -1,0 +1,62 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "careLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "caregiverId", "order": "ASCENDING" },
+        { "fieldPath": "checkInAt",   "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "careLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "elderId",   "order": "ASCENDING" },
+        { "fieldPath": "checkInAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "careLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "elderId",   "order": "ASCENDING" },
+        { "fieldPath": "logDate",   "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "medicationLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "elderId",  "order": "ASCENDING" },
+        { "fieldPath": "takenAt",  "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "emergencyAlerts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid",       "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ltcResources",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "county",    "order": "ASCENDING" },
+        { "fieldPath": "township",  "order": "ASCENDING" },
+        { "fieldPath": "level",     "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "notifications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "targetUid", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

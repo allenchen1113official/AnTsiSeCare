@@ -1,0 +1,120 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── 共用函式 ──────────────────────────────────────────────────────────────
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasRole(role) {
+      return isSignedIn() && getUserData().role == role;
+    }
+
+    function isCaregiver() { return hasRole('caregiver'); }
+    function isFamily()    { return hasRole('family'); }
+    function isCareManager() { return hasRole('care_manager'); }
+
+    function isElderRelated(elderId) {
+      return isSignedIn() &&
+             (isOwner(elderId) ||
+              elderId in getUserData().elderIds);
+    }
+
+    // ── users 集合 ────────────────────────────────────────────────────────────
+    match /users/{userId} {
+      // 本人可讀寫；照管專員可讀
+      allow read: if isOwner(userId) || isCareManager();
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isOwner(userId) &&
+                       // 禁止自行變更 role（需管理員操作）
+                       !request.resource.data.diff(resource.data).affectedKeys()
+                         .hasAny(['role']);
+      allow delete: if false; // 不允許刪除帳號
+    }
+
+    // ── careLogs 集合 ─────────────────────────────────────────────────────────
+    match /careLogs/{logId} {
+      // 照服員可建立自己的日誌
+      allow create: if isCaregiver() &&
+                       request.resource.data.caregiverId == request.auth.uid;
+
+      // 照服員可讀寫自己的日誌；家屬/照管專員可讀取關聯長者的日誌
+      allow read: if isSignedIn() && (
+        resource.data.caregiverId == request.auth.uid ||
+        isElderRelated(resource.data.elderId) ||
+        isCareManager()
+      );
+
+      allow update: if isCaregiver() &&
+                       resource.data.caregiverId == request.auth.uid;
+
+      // 軟刪除：不實際 delete，改用 isDeleted 欄位
+      allow delete: if false;
+    }
+
+    // ── medicines 集合 ────────────────────────────────────────────────────────
+    match /medicines/{medicineId} {
+      allow read: if isSignedIn() && (
+        isElderRelated(resource.data.elderId) ||
+        isCareManager()
+      );
+      allow create, update: if isSignedIn() &&
+                                isElderRelated(request.resource.data.elderId);
+      allow delete: if false;
+    }
+
+    // ── medicationLogs 集合 ───────────────────────────────────────────────────
+    match /medicationLogs/{logId} {
+      allow read: if isSignedIn() && (
+        isElderRelated(resource.data.elderId) ||
+        isCareManager()
+      );
+      allow create: if isSignedIn() &&
+                       request.resource.data.takenBy == request.auth.uid;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // ── emergencyAlerts 集合 ──────────────────────────────────────────────────
+    match /emergencyAlerts/{alertId} {
+      // 任何已登入使用者皆可建立（SOS 情境）
+      allow create: if isSignedIn();
+
+      // 本人、家屬、照管專員可讀
+      allow read: if isSignedIn() && (
+        resource.data.uid == request.auth.uid ||
+        isCareManager()
+      );
+
+      // 不可修改或刪除緊急通報紀錄
+      allow update, delete: if false;
+    }
+
+    // ── ltcResources 集合（長照機構）─────────────────────────────────────────
+    match /ltcResources/{resourceId} {
+      // 公開可讀；僅 care_manager 可寫
+      allow read: if true;
+      allow write: if isCareManager();
+    }
+
+    // ── notifications 集合 ───────────────────────────────────────────────────
+    match /notifications/{notifId} {
+      allow read: if isSignedIn() &&
+                     resource.data.targetUid == request.auth.uid;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() &&
+                       resource.data.targetUid == request.auth.uid;
+      allow delete: if false;
+    }
+  }
+}
