@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>安心照護 AnTsiSeCare — MVP 互動展示</title>
+<style>
+/* ── CSS 變數：品牌色系 ── */
+:root {
+  --primary:        #1B5E4F;
+  --primary-mid:    #2E7D6B;
+  --primary-light:  #4CAF96;
+  --primary-surface:#E8F5F1;
+  --primary-bg:     #F4FAF8;
+  --secondary:      #E87722;
+  --secondary-surface:#FEF0E4;
+  --emergency:      #B71C1C;
+  --emergency-mid:  #E53935;
+  --emergency-surface:#FFEBEE;
+  --success:        #1B5E20;
+  --success-surface:#E8F5E9;
+  --warning:        #F57F17;
+  --warning-surface:#FFF8E1;
+  --info:           #1976D2;
+  --info-surface:   #E3F2FD;
+  --text-primary:   #212121;
+  --text-secondary: #424242;
+  --text-hint:      #9E9E9E;
+  --divider:        #EEEEEE;
+  --surface:        #FAFAFA;
+  --white:          #FFFFFF;
+  --card-shadow:    0 2px 8px rgba(0,0,0,0.08);
+  --radius:         12px;
+  --radius-card:    16px;
+}
+
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body {
+  font-family: -apple-system, 'Noto Sans TC', 'Segoe UI', sans-serif;
+  background: #E8ECF0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 24px 16px;
+}
+
+/* ── 手機外框 ── */
+.phone-wrapper {
+  width: 390px;
+  min-height: 844px;
+  background: var(--surface);
+  border-radius: 40px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.22), 0 0 0 8px #1a1a1a, 0 0 0 12px #333;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 瀏海 */
+.phone-notch {
+  background: #000;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.phone-notch .notch-island {
+  width: 120px; height: 18px;
+  background: #111;
+  border-radius: 0 0 14px 14px;
+}
+
+/* 狀態列 */
+.status-bar {
+  background: var(--white);
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+/* 主內容區 */
+.screen-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  background: var(--surface);
+  scrollbar-width: none;
+}
+.screen-container::-webkit-scrollbar { display: none; }
+
+/* 畫面（每個功能頁面） */
+.screen {
+  display: none;
+  flex-direction: column;
+  min-height: 100%;
+  animation: fadeIn 0.2s ease;
+}
+.screen.active { display: flex; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* 底部導覽列 */
+.bottom-nav {
+  background: var(--white);
+  height: 68px;
+  display: flex;
+  align-items: stretch;
+  border-top: 1px solid var(--divider);
+  flex-shrink: 0;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+}
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border: none;
+  background: transparent;
+  padding: 6px 0;
+}
+.nav-item:active { background: var(--primary-surface); }
+.nav-item .nav-icon { font-size: 20px; line-height: 1; }
+.nav-item .nav-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-hint);
+  line-height: 1;
+}
+.nav-item.active .nav-label { color: var(--primary); font-weight: 700; }
+.nav-sos .nav-icon-wrap {
+  background: var(--emergency);
+  border-radius: 18px;
+  padding: 4px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-sos.active .nav-label { color: var(--emergency); font-weight: 700; }
+
+/* ── AppBar ── */
+.app-bar {
+  background: var(--white);
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 8px;
+  border-bottom: 1px solid var(--divider);
+  flex-shrink: 0;
+}
+.app-bar .title {
+  flex: 1;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.app-bar .action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  padding: 6px;
+  border-radius: 50%;
+  color: var(--text-secondary);
+}
+
+/* ── Card ── */
+.card {
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+.card-body { padding: 16px; }
+
+/* ── Button ── */
+.btn {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 52px;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn:active { opacity: 0.85; transform: scale(0.98); }
+.btn-primary { background: var(--primary); color: var(--white); }
+.btn-danger  { background: var(--emergency); color: var(--white); }
+.btn-outline {
+  background: var(--white);
+  border: 1.5px solid var(--primary);
+  color: var(--primary);
+}
+.btn-sm {
+  height: 36px;
+  font-size: 13px;
+  padding: 0 16px;
+  width: auto;
+}
+
+/* ── Input ── */
+.input-field {
+  width: 100%;
+  height: 52px;
+  border: 1.5px solid var(--divider);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 0 16px;
+  font-size: 16px;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.input-field:focus { border-color: var(--primary); }
+.input-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* ── Badge / Chip ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.badge-primary { background: var(--primary-surface); color: var(--primary); }
+.badge-danger  { background: var(--emergency-surface); color: var(--emergency); }
+.badge-success { background: var(--success-surface); color: var(--success); }
+.badge-warning { background: var(--warning-surface); color: var(--warning); }
+.badge-info    { background: var(--info-surface); color: var(--info); }
+
+/* ── Divider ── */
+.divider { height: 1px; background: var(--divider); margin: 12px 0; }
+
+/* ── Section title ── */
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+/* ── Snackbar ── */
+#snackbar {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #323232;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  opacity: 0;
+  transition: opacity 0.25s, transform 0.25s;
+  z-index: 1000;
+  white-space: nowrap;
+  max-width: 320px;
+  text-align: center;
+}
+#snackbar.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Loading spinner ── */
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Info banner ── */
+.info-banner {
+  width: 100%;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ── Page info bar (outside phone) ── */
+.demo-label {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.75);
+  color: white;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<div class="demo-label">📱 AnTsiSeCare MVP — 互動展示</div>
+<div class="phone-wrapper">
+  <div class="phone-notch"><div class="notch-island"></div></div>
+  <div class="status-bar">
+    <span>9:41</span>
+    <span>🇹🇼 苗栗縣</span>
+    <span>📶 100%</span>
+  </div>
+  <div class="screen-container" id="screenContainer">
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!--  SCREEN 1: 登入                                                -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div class="screen active" id="screen-auth">
+      <div style="flex:1;overflow-y:auto;padding:32px 24px 24px;">
+        <!-- Logo -->
+        <div style="text-align:center;margin-bottom:40px;">
+          <div style="width:80px;height:80px;background:var(--primary-surface);border-radius:20px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:40px;">❤️</div>
+          <div style="font-size:28px;font-weight:700;color:var(--primary);">安心照護</div>
+          <div style="font-size:14px;color:var(--text-secondary);margin-top:4px;">AnTsiSeCare</div>
+          <div style="font-size:12px;color:var(--text-hint);margin-top:2px;">苗栗縣長照服務整合平台</div>
+        </div>
+        <!-- Phone input -->
+        <div style="margin-bottom:12px;">
+          <span class="input-label">手機號碼 / Nomor HP</span>
+          <div style="position:relative;">
+            <div style="position:absolute;left:12px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:6px;font-size:14px;color:var(--text-secondary);pointer-events:none;">
+              <span>🇹🇼</span><span>+886</span>
+              <span style="width:1px;height:20px;background:var(--divider);display:inline-block;margin:0 4px;"></span>
+            </div>
+            <input class="input-field" id="phoneInput" type="tel" placeholder="0912 345 678"
+              style="padding-left:90px;font-size:18px;letter-spacing:1.5px;" maxlength="10"
+              oninput="this.value=this.value.replace(/\D/g,'')">
+          </div>
+        </div>
+        <!-- Language chips -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px;">
+          <div class="lang-chip active-lang" onclick="selectLang(this,'zh-TW')" data-lang="zh-TW"
+            style="padding:5px 12px;border-radius:16px;font-size:12px;cursor:pointer;border:1.5px solid var(--primary);background:var(--primary-surface);color:var(--primary);font-weight:600;">中文</div>
+          <div class="lang-chip" onclick="selectLang(this,'id')" data-lang="id"
+            style="padding:5px 12px;border-radius:16px;font-size:12px;cursor:pointer;border:1.5px solid var(--divider);color:var(--text-secondary);">🇮🇩 Indonesia</div>
+          <div class="lang-chip" onclick="selectLang(this,'vi')" data-lang="vi"
+            style="padding:5px 12px;border-radius:16px;font-size:12px;cursor:pointer;border:1.5px solid var(--divider);color:var(--text-secondary);">🇻🇳 Tiếng Việt</div>
+          <div class="lang-chip" onclick="selectLang(this,'en')" data-lang="en"
+            style="padding:5px 12px;border-radius:16px;font-size:12px;cursor:pointer;border:1.5px solid var(--divider);color:var(--text-secondary);">🇬🇧 English</div>
+        </div>
+        <button class="btn btn-primary" onclick="doLogin()" id="loginBtn">發送驗證碼 / Kirim OTP</button>
+        <div style="text-align:center;margin-top:20px;font-size:12px;color:var(--text-hint);">
+          登入即同意服務條款與隱私政策<br>Dengan masuk, Anda menyetujui syarat & ketentuan
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!--  SCREEN 2: 首頁                                                -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-home">
+      <!-- Header banner -->
+      <div style="background:var(--primary);padding:24px 20px;border-radius:0 0 24px 24px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:16px;">🇹🇼</span>
+            <span style="font-size:13px;color:rgba(255,255,255,0.75);">安心照護</span>
+          </div>
+          <div id="syncBadge" onclick="triggerSync()" style="background:var(--warning);padding:4px 10px;border-radius:12px;font-size:11px;color:white;font-weight:700;cursor:pointer;display:none;">⬆ 2 待同步</div>
+        </div>
+        <div style="font-size:22px;font-weight:700;color:white;margin-bottom:4px;">早安，Siti！👋</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.7);">2026/04/21 星期二</div>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:20px 16px 16px;">
+        <!-- Quick actions -->
+        <div class="section-title">快速操作</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;">
+          <div class="quick-action" onclick="goScreen('screen-carelog')" style="background:rgba(27,94,79,0.1);border:1px solid rgba(27,94,79,0.3);border-radius:var(--radius);padding:14px;cursor:pointer;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:24px;">📋</span>
+            <span style="font-size:13px;font-weight:600;color:var(--primary);">新增照護紀錄</span>
+          </div>
+          <div class="quick-action" onclick="goScreen('screen-sos')" style="background:rgba(183,28,28,0.1);border:1px solid rgba(183,28,28,0.3);border-radius:var(--radius);padding:14px;cursor:pointer;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:24px;">🆘</span>
+            <span style="font-size:13px;font-weight:600;color:var(--emergency);">緊急通報</span>
+          </div>
+          <div class="quick-action" onclick="goScreen('screen-map')" style="background:rgba(25,118,210,0.1);border:1px solid rgba(25,118,210,0.3);border-radius:var(--radius);padding:14px;cursor:pointer;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:24px;">🗺️</span>
+            <span style="font-size:13px;font-weight:600;color:var(--info);">長照資源地圖</span>
+          </div>
+          <div class="quick-action" onclick="goScreen('screen-med')" style="background:rgba(232,119,34,0.1);border:1px solid rgba(232,119,34,0.3);border-radius:var(--radius);padding:14px;cursor:pointer;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:24px;">💊</span>
+            <span style="font-size:13px;font-weight:600;color:var(--secondary);">用藥管理</span>
+          </div>
+        </div>
+        <!-- Recent logs -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div class="section-title" style="margin-bottom:0;">最近照護紀錄</div>
+          <button onclick="goScreen('screen-carelog')" style="background:none;border:none;color:var(--primary);font-size:13px;cursor:pointer;font-weight:500;">全部 ›</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px;">
+          <div style="background:var(--white);border-radius:var(--radius-card);padding:14px;border:1px solid var(--divider);display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="goScreen('screen-carelog')">
+            <span class="badge badge-primary">04-21</span>
+            <span style="flex:1;font-size:13px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">飲食正常，血壓 125/82，已協助洗澡</span>
+          </div>
+          <div style="background:var(--white);border-radius:var(--radius-card);padding:14px;border:1px solid rgba(183,28,28,0.3);display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="goScreen('screen-carelog')">
+            <span class="badge badge-primary">04-20</span>
+            <span style="flex:1;font-size:13px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">血壓偏高 155/95，情緒焦躁</span>
+            <span style="font-size:16px;">⚠️</span>
+          </div>
+          <div style="background:var(--white);border-radius:var(--radius-card);padding:14px;border:1px solid var(--divider);display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="goScreen('screen-carelog')">
+            <span class="badge badge-primary">04-19</span>
+            <span style="flex:1;font-size:13px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">一切正常，活動力佳</span>
+          </div>
+        </div>
+        <!-- Offline info -->
+        <div style="background:var(--warning-surface);border:1px solid rgba(245,127,23,0.3);border-radius:var(--radius);padding:10px 14px;display:flex;align-items:center;gap:8px;margin-top:8px;" id="offlineBar">
+          <span style="font-size:16px;">📶</span>
+          <span style="font-size:12px;color:var(--warning);font-weight:600;">離線模式：資料已儲存至本機，上線後自動同步</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!--  SCREEN 3: 照護日誌                                            -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-carelog">
+      <div class="app-bar">
+        <button class="action-btn" onclick="goScreen('screen-home')">‹</button>
+        <span class="title">照護日誌</span>
+        <div style="background:var(--primary-surface);border:1px solid var(--primary);border-radius:16px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--primary);cursor:pointer;" onclick="toggleLang()">🌐 中 / id</div>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:16px;">
+        <!-- Check-in time -->
+        <div style="display:flex;align-items:center;gap:8px;color:var(--text-secondary);font-size:13px;margin-bottom:20px;">
+          <span>🕐</span><span>2026/04/21 09:30 簽到</span>
+        </div>
+        <!-- A. Care items grid -->
+        <div class="section-title">照護項目 / Item Perawatan</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:24px;" id="careGrid">
+          <!-- js will build these -->
+        </div>
+        <!-- Abnormal warning -->
+        <div id="abnormalWarn" style="display:none;background:var(--emergency-surface);border:1px solid rgba(183,28,28,0.3);border-radius:10px;padding:10px 14px;display:none;align-items:center;gap:8px;margin-bottom:12px;">
+          <span>⚠️</span>
+          <span style="font-size:13px;color:var(--emergency);font-weight:600;">有異常項目，請在備註欄說明狀況（至少10字）</span>
+        </div>
+        <!-- B. Vitals -->
+        <div class="section-title">生命跡象 / Tanda Vital</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px;" id="vitalsGrid">
+        </div>
+        <!-- C. Note -->
+        <div class="section-title">備註 / Catatan</div>
+        <div style="position:relative;margin-bottom:8px;">
+          <textarea id="noteField" placeholder="請輸入今日照護狀況備註… / Tuliskan catatan perawatan hari ini…" rows="3"
+            style="width:100%;border:1.5px solid var(--divider);border-radius:var(--radius);padding:12px;font-size:14px;resize:none;outline:none;font-family:inherit;background:var(--surface);"
+            oninput="checkNote()"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <button onclick="voiceInput()" id="voiceBtn" style="flex:1;height:48px;border-radius:var(--radius);border:1.5px solid var(--primary);background:var(--primary-surface);color:var(--primary);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+            🎙️ 長按語音輸入
+          </button>
+          <button onclick="doTranslate()" id="translateBtn" style="height:48px;padding:0 14px;border-radius:var(--radius);border:1.5px solid var(--primary);background:white;color:var(--primary);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">
+            🌐 翻譯
+          </button>
+        </div>
+        <!-- Translation result -->
+        <div id="translateResult" style="display:none;background:var(--primary-bg);border:1px solid var(--primary-surface);border-radius:10px;padding:12px;margin-bottom:16px;">
+          <div style="font-size:11px;color:var(--primary);font-weight:700;margin-bottom:6px;">🌐 Claude AI 翻譯結果（印尼語→中文）</div>
+          <div id="translateText" style="font-size:14px;color:var(--text-primary);line-height:1.6;"></div>
+        </div>
+        <!-- Emergency quick dial -->
+        <div style="background:var(--emergency-surface);border:1px solid rgba(183,28,28,0.2);border-radius:var(--radius);padding:12px;display:flex;gap:8px;margin-bottom:20px;">
+          <button onclick="callNumber('119')" style="flex:1;height:44px;background:var(--emergency);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">🆘 119</button>
+          <button onclick="callNumber('1955')" style="flex:1;height:44px;background:var(--info);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">📞 1955</button>
+        </div>
+        <button class="btn btn-primary" onclick="saveLog()" id="saveBtn">💾 儲存照護紀錄</button>
+        <div style="height:24px;"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!--  SCREEN 4: SOS                                                 -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-sos">
+      <div class="app-bar" style="background:var(--emergency);">
+        <button class="action-btn" onclick="goScreen('screen-home')" style="color:white;">‹</button>
+        <span class="title" style="color:white;">🆘 緊急通報</span>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:16px;">
+        <!-- Big SOS button -->
+        <div style="text-align:center;padding:24px 0 16px;">
+          <div id="sosBtn" onclick="triggerSOS()" style="width:160px;height:160px;background:var(--emergency);border-radius:50%;margin:0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 0 0 rgba(183,28,28,0.4);animation:sosPulse 1.5s ease-in-out infinite;">
+            <span style="font-size:52px;line-height:1;">🚨</span>
+            <span style="font-size:26px;font-weight:900;color:white;letter-spacing:4px;">SOS</span>
+            <span style="font-size:18px;font-weight:700;color:white;">119</span>
+          </div>
+          <style>
+            @keyframes sosPulse {
+              0%   { box-shadow: 0 0 0 0 rgba(183,28,28,0.5); transform: scale(1); }
+              50%  { box-shadow: 0 0 0 24px rgba(183,28,28,0); transform: scale(1.04); }
+              100% { box-shadow: 0 0 0 0 rgba(183,28,28,0); transform: scale(1); }
+            }
+          </style>
+          <p style="font-size:13px;color:var(--text-secondary);margin-top:10px;">點擊撥打 119 緊急救護</p>
+        </div>
+        <!-- Emergency types -->
+        <div class="section-title">緊急類型</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px;">
+          <div onclick="selectEmergency('跌倒')" style="background:rgba(183,28,28,0.08);border:1px solid rgba(183,28,28,0.3);border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;">
+            <div style="font-size:24px;">🤕</div><div style="font-size:11px;font-weight:600;color:var(--emergency);margin-top:4px;">跌倒</div>
+          </div>
+          <div onclick="selectEmergency('發燒')" style="background:rgba(183,28,28,0.08);border:1px solid rgba(183,28,28,0.3);border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;">
+            <div style="font-size:24px;">🤒</div><div style="font-size:11px;font-weight:600;color:var(--emergency);margin-top:4px;">發燒</div>
+          </div>
+          <div onclick="selectEmergency('胸痛')" style="background:rgba(183,28,28,0.08);border:1px solid rgba(183,28,28,0.3);border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;">
+            <div style="font-size:24px;">💔</div><div style="font-size:11px;font-weight:600;color:var(--emergency);margin-top:4px;">胸痛</div>
+          </div>
+          <div onclick="selectEmergency('意識不清')" style="background:rgba(183,28,28,0.08);border:1px solid rgba(183,28,28,0.3);border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;">
+            <div style="font-size:24px;">😵</div><div style="font-size:11px;font-weight:600;color:var(--emergency);margin-top:4px;">意識不清</div>
+          </div>
+          <div onclick="selectEmergency('疑似中風')" style="background:rgba(183,28,28,0.08);border:1px solid rgba(183,28,28,0.3);border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;">
+            <div style="font-size:24px;">🧠</div><div style="font-size:11px;font-weight:600;color:var(--emergency);margin-top:4px;">疑似中風</div>
+          </div>
+          <div onclick="notifyFamily()" style="background:rgba(25,118,210,0.08);border:1px solid rgba(25,118,210,0.3);border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;">
+            <div style="font-size:24px;">👪</div><div style="font-size:11px;font-weight:600;color:var(--info);margin-top:4px;">通知家屬</div>
+          </div>
+        </div>
+        <!-- Hotlines -->
+        <div class="section-title">服務專線</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+          <div onclick="callNumber('1966')" style="background:white;border:1px solid var(--divider);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <span style="font-size:24px;">📞</span>
+            <div style="flex:1;"><div style="font-size:14px;font-weight:700;color:var(--primary);">1966 長照服務</div><div style="font-size:12px;color:var(--text-secondary);">長照服務申請與諮詢</div></div>
+            <div style="background:var(--primary);color:white;padding:6px 14px;border-radius:8px;font-size:13px;font-weight:700;">撥打</div>
+          </div>
+          <div onclick="callNumber('1955')" style="background:rgba(232,119,34,0.06);border:2px solid var(--secondary);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <span style="font-size:24px;">🇮🇩</span>
+            <div style="flex:1;"><div style="font-size:14px;font-weight:700;color:var(--secondary);">1955 移工諮詢</div><div style="font-size:12px;color:var(--text-secondary);">印尼語服務 / Layanan Bahasa Indonesia</div></div>
+            <div style="background:var(--secondary);color:white;padding:6px 14px;border-radius:8px;font-size:13px;font-weight:700;">撥打</div>
+          </div>
+        </div>
+        <!-- Location share -->
+        <div style="background:var(--warning-surface);border:1px solid rgba(245,127,23,0.3);border-radius:var(--radius);padding:14px;" id="locationBox">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <span>📍</span>
+            <span style="font-size:13px;font-weight:600;color:var(--text-primary);" id="locationStatus">傳送位置給家屬 / Kirim lokasi ke keluarga</span>
+          </div>
+          <button class="btn" style="background:var(--warning);color:white;height:44px;" onclick="sendLocation()" id="locationBtn">
+            📤 立即傳送我的位置
+          </button>
+        </div>
+        <div style="height:24px;"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!--  SCREEN 5: 用藥管理                                            -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-med">
+      <div class="app-bar">
+        <button class="action-btn" onclick="goScreen('screen-home')">‹</button>
+        <span class="title">💊 用藥管理</span>
+        <button class="action-btn" onclick="showAddMed()">＋</button>
+      </div>
+      <!-- Date banner -->
+      <div style="background:var(--primary-surface);padding:10px 16px;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:16px;">📅</span>
+        <span style="font-size:13px;font-weight:600;color:var(--primary);">今日排程 — 2026-04-21</span>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:16px;">
+        <!-- Med cards -->
+        <div style="display:flex;flex-direction:column;gap:12px;" id="medList">
+          <!-- injected by JS -->
+        </div>
+        <div style="height:24px;"></div>
+      </div>
+      <!-- Add medication modal -->
+      <div id="addMedModal" style="display:none;position:absolute;bottom:0;left:0;right:0;background:white;border-radius:20px 20px 0 0;padding:20px;box-shadow:0 -8px 32px rgba(0,0,0,0.15);z-index:50;">
+        <div style="width:40px;height:4px;background:var(--divider);border-radius:2px;margin:0 auto 16px;"></div>
+        <div style="font-size:18px;font-weight:700;color:var(--text-primary);margin-bottom:16px;">新增藥品</div>
+        <div style="margin-bottom:10px;"><span class="input-label">藥品名稱（中文）</span><input class="input-field" id="medNameZh" placeholder="例：血壓藥"></div>
+        <div style="margin-bottom:10px;"><span class="input-label">🇮🇩 Nama Obat (Indonesia)</span><input class="input-field" id="medNameId" placeholder="Obat darah tinggi"></div>
+        <div style="margin-bottom:10px;"><span class="input-label">劑量</span><input class="input-field" id="medDose" placeholder="5mg × 1 顆"></div>
+        <div style="margin-bottom:16px;">
+          <span class="input-label">提醒時間</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;" id="timeChips">
+            <span style="background:var(--primary-surface);color:var(--primary);padding:6px 12px;border-radius:20px;font-size:13px;font-weight:600;">08:00 ✕</span>
+            <span onclick="addTime()" style="background:white;border:1.5px dashed var(--divider);color:var(--text-hint);padding:6px 12px;border-radius:20px;font-size:13px;cursor:pointer;">＋ 新增</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline" style="height:44px;" onclick="hideAddMed()">取消</button>
+          <button class="btn btn-primary" style="height:44px;" onclick="saveMed()">儲存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!--  SCREEN 6: 長照資源地圖                                         -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-map">
+      <div class="app-bar">
+        <button class="action-btn" onclick="goScreen('screen-home')">‹</button>
+        <span class="title">🗺️ 長照資源</span>
+        <button class="action-btn" onclick="refreshMap()">↺</button>
+      </div>
+      <!-- Search bar -->
+      <div style="padding:8px 16px 4px;">
+        <div style="position:relative;">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;">🔍</span>
+          <input id="mapSearch" class="input-field" placeholder="搜尋機構名稱／地址／鄉鎮…" style="padding-left:40px;height:44px;font-size:14px;"
+            oninput="filterResources()">
+        </div>
+      </div>
+      <!-- Level filter chips -->
+      <div style="display:flex;gap:8px;padding:6px 16px;overflow-x:auto;" id="levelChips">
+        <div class="level-chip active-chip" data-level="" onclick="setLevel(this,'')" style="white-space:nowrap;padding:6px 14px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:var(--primary);color:white;border:1px solid var(--primary);">全部</div>
+        <div class="level-chip" data-level="A" onclick="setLevel(this,'A')" style="white-space:nowrap;padding:6px 14px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:white;color:var(--success);border:1px solid var(--success);">A 級</div>
+        <div class="level-chip" data-level="B" onclick="setLevel(this,'B')" style="white-space:nowrap;padding:6px 14px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:white;color:var(--primary);border:1px solid var(--primary);">B 級</div>
+        <div class="level-chip" data-level="C" onclick="setLevel(this,'C')" style="white-space:nowrap;padding:6px 14px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:white;color:var(--info);border:1px solid var(--info);">C 級</div>
+      </div>
+      <!-- Township filter -->
+      <div style="display:flex;gap:6px;padding:4px 16px 6px;overflow-x:auto;" id="townshipChips">
+      </div>
+      <!-- Count -->
+      <div style="padding:2px 16px 4px;font-size:12px;color:var(--text-hint);" id="mapCount">找到 18 間機構</div>
+      <!-- Resource list -->
+      <div style="flex:1;overflow-y:auto;padding:4px 16px 16px;" id="resourceList">
+        <!-- injected by JS -->
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!--  SCREEN 7: 個人設定                                            -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-profile">
+      <div class="app-bar">
+        <button class="action-btn" onclick="goScreen('screen-home')">‹</button>
+        <span class="title">個人設定</span>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:20px 16px;">
+        <!-- User card -->
+        <div style="background:var(--primary);border-radius:var(--radius-card);padding:20px;text-align:center;margin-bottom:20px;">
+          <div style="width:64px;height:64px;background:rgba(255,255,255,0.2);border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:32px;">👩</div>
+          <div style="font-size:18px;font-weight:700;color:white;">Siti Rahayu</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.75);margin-top:2px;">照服員 / Caregiver · 🇮🇩 印尼</div>
+          <div style="display:flex;justify-content:center;gap:8px;margin-top:12px;">
+            <span style="background:rgba(255,255,255,0.2);color:white;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:600;">照服員</span>
+            <span style="background:rgba(255,255,255,0.2);color:white;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:600;">苗栗縣</span>
+          </div>
+        </div>
+        <!-- Settings -->
+        <div class="section-title">設定</div>
+        <div style="background:white;border-radius:var(--radius-card);overflow:hidden;box-shadow:var(--card-shadow);">
+          <div onclick="toggleSetting('lang')" style="padding:16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--divider);cursor:pointer;">
+            <span style="font-size:20px;">🌐</span>
+            <div style="flex:1;"><div style="font-size:14px;font-weight:600;">顯示語言</div><div style="font-size:12px;color:var(--text-hint);">Bahasa Indonesia (印尼語)</div></div>
+            <span style="color:var(--text-hint);">›</span>
+          </div>
+          <div onclick="toggleSetting('elder')" style="padding:16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--divider);cursor:pointer;">
+            <span style="font-size:20px;">👴</span>
+            <div style="flex:1;"><div style="font-size:14px;font-weight:600;">長者模式</div><div style="font-size:12px;color:var(--text-hint);">字體放大 1.25 倍</div></div>
+            <div id="elderToggle" style="width:44px;height:24px;background:var(--primary);border-radius:12px;position:relative;cursor:pointer;transition:background 0.2s;">
+              <div style="width:20px;height:20px;background:white;border-radius:50%;position:absolute;top:2px;right:2px;transition:transform 0.2s;"></div>
+            </div>
+          </div>
+          <div onclick="toggleSetting('notification')" style="padding:16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--divider);cursor:pointer;">
+            <span style="font-size:20px;">🔔</span>
+            <div style="flex:1;"><div style="font-size:14px;font-weight:600;">用藥提醒通知</div><div style="font-size:12px;color:var(--text-hint);">每日 08:00、12:00、20:00</div></div>
+            <div id="notifToggle" style="width:44px;height:24px;background:var(--primary);border-radius:12px;position:relative;cursor:pointer;">
+              <div style="width:20px;height:20px;background:white;border-radius:50%;position:absolute;top:2px;right:2px;"></div>
+            </div>
+          </div>
+          <div onclick="toggleSetting('prayer')" style="padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <span style="font-size:20px;">🕌</span>
+            <div style="flex:1;"><div style="font-size:14px;font-weight:600;">禱告時間提醒</div><div style="font-size:12px;color:var(--text-hint);">Pengingat Waktu Salat</div></div>
+            <div id="prayerToggle" style="width:44px;height:24px;background:var(--divider);border-radius:12px;position:relative;cursor:pointer;">
+              <div style="width:20px;height:20px;background:white;border-radius:50%;position:absolute;top:2px;left:2px;"></div>
+            </div>
+          </div>
+        </div>
+        <div style="height:16px;"></div>
+        <!-- Test results summary -->
+        <div class="section-title">✅ 測試驗證</div>
+        <div style="background:var(--success-surface);border:1px solid rgba(27,94,32,0.3);border-radius:var(--radius);padding:14px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
+            <div><span style="font-weight:700;color:var(--success);">68 / 68</span><br><span style="color:var(--text-secondary);">單元測試通過</span></div>
+            <div><span style="font-weight:700;color:var(--success);">0</span><br><span style="color:var(--text-secondary);">測試失敗</span></div>
+            <div><span style="font-weight:700;color:var(--primary);">9 Suites</span><br><span style="color:var(--text-secondary);">測試套件</span></div>
+            <div><span style="font-weight:700;color:var(--primary);">5 語言</span><br><span style="color:var(--text-secondary);">多語言支援</span></div>
+          </div>
+        </div>
+        <div style="height:24px;"></div>
+        <button class="btn btn-outline" onclick="doLogout()">登出 / Keluar</button>
+        <div style="height:24px;"></div>
+      </div>
+    </div>
+
+  </div><!-- end screen-container -->
+
+  <!-- Bottom Nav (hidden on auth screen) -->
+  <nav class="bottom-nav" id="bottomNav" style="display:none;">
+    <button class="nav-item active" id="nav-home" onclick="navTo('screen-home','nav-home')">
+      <span class="nav-icon">🏠</span><span class="nav-label">首頁</span>
+    </button>
+    <button class="nav-item" id="nav-carelog" onclick="navTo('screen-carelog','nav-carelog')">
+      <span class="nav-icon">📋</span><span class="nav-label">日誌</span>
+    </button>
+    <button class="nav-item nav-sos" id="nav-sos" onclick="navTo('screen-sos','nav-sos')">
+      <div class="nav-icon-wrap"><span style="font-size:20px;color:white;">🚨</span></div>
+      <span class="nav-label">SOS</span>
+    </button>
+    <button class="nav-item" id="nav-map" onclick="navTo('screen-map','nav-map')">
+      <span class="nav-icon">🗺️</span><span class="nav-label">地圖</span>
+    </button>
+    <button class="nav-item" id="nav-profile" onclick="navTo('screen-profile','nav-profile')">
+      <span class="nav-icon">👤</span><span class="nav-label">設定</span>
+    </button>
+  </nav>
+</div><!-- end phone-wrapper -->
+<div id="snackbar"></div>
+<script>
+// ─── 資料 ────────────────────────────────────────────────────────────────────
+const CARE_ITEMS = [
+  {key:'feeding',  emoji:'🍚', zh:'飲食', id:'Makan'},
+  {key:'medication',emoji:'💊',zh:'用藥', id:'Obat'},
+  {key:'excretion',emoji:'🚽',zh:'排泄', id:'BAB/BAK'},
+  {key:'bathing',  emoji:'🛁', zh:'洗澡', id:'Mandi'},
+  {key:'exercise', emoji:'🏃', zh:'運動', id:'Olahraga'},
+  {key:'sleep',    emoji:'😴', zh:'睡眠', id:'Tidur'},
+  {key:'mood',     emoji:'😊', zh:'情緒', id:'Emosi'},
+  {key:'wound',    emoji:'🩹', zh:'傷口', id:'Luka'},
+];
+const VITALS = [
+  {key:'bp',    label:'血壓',  unit:'mmHg', placeholder:'135/82',  abnorm: v=>{ const [s]=v.split('/'); return +s>140||+s<90; }},
+  {key:'sugar', label:'血糖',  unit:'mg/dL',placeholder:'95',     abnorm: v=>+v>180||+v<70},
+  {key:'temp',  label:'體溫',  unit:'°C',   placeholder:'36.5',   abnorm: v=>+v>37.5||+v<36},
+  {key:'hr',    label:'心率',  unit:'bpm',  placeholder:'72',     abnorm: v=>+v>100||+v<60},
+  {key:'spo2',  label:'血氧',  unit:'%',    placeholder:'98',     abnorm: v=>+v<95},
+  {key:'weight',label:'體重',  unit:'kg',   placeholder:'58',     abnorm: ()=>false},
+];
+const RESOURCES = [
+  {id:'ml001',name:'頭份市長照旗艦店',level:'A',township:'頭份市',address:'頭份市中正路100號',phone:'037-680001'},
+  {id:'ml002',name:'苗栗市長照複合型服務中心',level:'B',township:'苗栗市',address:'苗栗市中山路200號',phone:'037-330002'},
+  {id:'ml003',name:'竹南鎮巷弄長照站',level:'C',township:'竹南鎮',address:'竹南鎮民主路50號',phone:'037-470003'},
+  {id:'ml004',name:'苑裡鎮長照複合服務中心',level:'B',township:'苑裡鎮',address:'苑裡鎮中山路180號',phone:'037-740004'},
+  {id:'ml005',name:'通霄鎮關懷據點',level:'C',township:'通霄鎮',address:'通霄鎮中正路30號',phone:'037-780005'},
+  {id:'ml006',name:'後龍鎮長照服務中心',level:'B',township:'後龍鎮',address:'後龍鎮大山路60號',phone:'037-720006'},
+  {id:'ml007',name:'銅鑼鄉社區照顧關懷據點',level:'C',township:'銅鑼鄉',address:'銅鑼鄉中興路20號',phone:'037-980007'},
+  {id:'ml008',name:'三義鄉長照巷弄站',level:'C',township:'三義鄉',address:'三義鄉民生路10號',phone:'037-870008'},
+  {id:'ml009',name:'公館鄉長照複合型中心',level:'B',township:'公館鄉',address:'公館鄉館南路100號',phone:'037-230009'},
+  {id:'ml010',name:'大湖鄉偏鄉長照服務站',level:'C',township:'大湖鄉',address:'大湖鄉大湖路50號',phone:'037-990010'},
+  {id:'ml011',name:'南庄鄉原住民長照據點',level:'C',township:'南庄鄉',address:'南庄鄉南江村30號',phone:'037-820011'},
+  {id:'ml012',name:'卓蘭鎮長照複合型中心',level:'B',township:'卓蘭鎮',address:'卓蘭鎮老庄里100號',phone:'04-25891012'},
+  {id:'ml013',name:'苗栗市旗艦型整合服務中心',level:'A',township:'苗栗市',address:'苗栗市縣府路8號',phone:'037-351013'},
+  {id:'ml014',name:'頭份市北區長照站',level:'C',township:'頭份市',address:'頭份市信義路88號',phone:'037-680014'},
+  {id:'ml015',name:'造橋鄉社區長照關懷站',level:'C',township:'造橋鄉',address:'造橋鄉造橋村5號',phone:'037-540015'},
+  {id:'ml016',name:'獅潭鄉偏鄉照護站',level:'C',township:'獅潭鄉',address:'獅潭鄉新店村10號',phone:'037-930016'},
+  {id:'ml017',name:'三灣鄉長照據點',level:'C',township:'三灣鄉',address:'三灣鄉三灣村20號',phone:'037-830017'},
+  {id:'ml018',name:'泰安鄉泰雅族長照服務站',level:'C',township:'泰安鄉',address:'泰安鄉錦水村1號',phone:'037-991018'},
+];
+const MEDICATIONS = [
+  {id:1,name:'血壓藥',nameId:'Obat darah tinggi',dosage:'amlodipine 5mg×1',times:['08:00','20:00'],taken:{},skipped:{}},
+  {id:2,name:'血糖藥',nameId:'Obat diabetes',dosage:'Metformin 500mg×1',times:['08:00','12:00','18:00'],taken:{},skipped:{}},
+  {id:3,name:'維他命 D',nameId:'Vitamin D',dosage:'1000 IU×1',times:['08:00'],taken:{},skipped:{}},
+];
+
+// ─── 狀態 ─────────────────────────────────────────────────────────────────────
+let careItemStates = {};  // key → 'normal'|'abnormal'|null
+let currentLang = 'zh-TW';
+let mapLevel = '';
+let mapTownship = '';
+
+// ─── 導覽 ─────────────────────────────────────────────────────────────────────
+function goScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('screenContainer').scrollTop = 0;
+  const isAuth = id === 'screen-auth';
+  document.getElementById('bottomNav').style.display = isAuth ? 'none' : 'flex';
+  // sync nav highlight
+  const map = {'screen-home':'nav-home','screen-carelog':'nav-carelog',
+    'screen-sos':'nav-sos','screen-map':'nav-map','screen-profile':'nav-profile'};
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if (map[id]) document.getElementById(map[id])?.classList.add('active');
+}
+function navTo(screenId, navId) {
+  goScreen(screenId);
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById(navId).classList.add('active');
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+function selectLang(el, lang) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-chip').forEach(c=>{
+    c.style.background=''; c.style.color='var(--text-secondary)';
+    c.style.borderColor='var(--divider)'; c.style.fontWeight='';
+  });
+  el.style.background='var(--primary-surface)';
+  el.style.color='var(--primary)';
+  el.style.borderColor='var(--primary)';
+  el.style.fontWeight='700';
+}
+function doLogin() {
+  const phone = document.getElementById('phoneInput').value;
+  if (phone.length < 10) { showSnack('請輸入有效的手機號碼'); return; }
+  const btn = document.getElementById('loginBtn');
+  btn.innerHTML='<span class="spinner"></span> 傳送中…';
+  btn.disabled = true;
+  setTimeout(()=>{
+    goScreen('screen-home');
+    document.getElementById('syncBadge').style.display='block';
+    showSnack('✅ 登入成功！歡迎，Siti');
+    buildCareGrid(); buildVitals(); buildMedList();
+    buildResourceList(); buildTownshipChips();
+  }, 1400);
+}
+
+// ─── Home ─────────────────────────────────────────────────────────────────────
+function triggerSync() {
+  document.getElementById('syncBadge').style.display='none';
+  showSnack('☁️ 已同步 2 筆照護紀錄至 Firestore');
+}
+
+// ─── Care Log ─────────────────────────────────────────────────────────────────
+function buildCareGrid() {
+  const g = document.getElementById('careGrid');
+  g.innerHTML = CARE_ITEMS.map(item=>`
+    <div id="ci-${item.key}" onclick="toggleCareItem('${item.key}')"
+      style="background:var(--surface);border:1.5px solid var(--divider);border-radius:12px;padding:10px 4px;text-align:center;cursor:pointer;transition:all 0.15s;">
+      <div style="font-size:26px;">${item.emoji}</div>
+      <div style="font-size:10px;font-weight:600;color:var(--text-secondary);margin-top:4px;">${item.zh}</div>
+      <div style="font-size:9px;color:var(--text-hint);">${item.id}</div>
+    </div>`).join('');
+}
+function toggleCareItem(key) {
+  const states = [null,'normal','abnormal'];
+  const cur = careItemStates[key];
+  const idx = states.indexOf(cur);
+  careItemStates[key] = states[(idx+1)%3];
+  updateCareItemUI(key);
+  checkAbnormal();
+}
+function updateCareItemUI(key) {
+  const el = document.getElementById('ci-'+key);
+  const s = careItemStates[key];
+  if (!el) return;
+  if (s==='normal') {
+    el.style.background='var(--success-surface)';
+    el.style.borderColor='var(--success)';
+    el.querySelector('div:last-child').textContent='✅ 正常';
+    el.querySelector('div:last-child').style.color='var(--success)';
+  } else if (s==='abnormal') {
+    el.style.background='var(--emergency-surface)';
+    el.style.borderColor='var(--emergency)';
+    el.querySelector('div:last-child').textContent='⚠️ 異常';
+    el.querySelector('div:last-child').style.color='var(--emergency)';
+  } else {
+    el.style.background='var(--surface)';
+    el.style.borderColor='var(--divider)';
+    const item = CARE_ITEMS.find(i=>i.key===key);
+    el.querySelector('div:last-child').textContent=item.id;
+    el.querySelector('div:last-child').style.color='var(--text-hint)';
+  }
+}
+function checkAbnormal() {
+  const hasAbnormal = Object.values(careItemStates).some(s=>s==='abnormal');
+  const w = document.getElementById('abnormalWarn');
+  w.style.display = hasAbnormal ? 'flex' : 'none';
+}
+function checkNote(){}
+function buildVitals() {
+  const g = document.getElementById('vitalsGrid');
+  g.innerHTML = VITALS.map(v=>`
+    <div style="position:relative;">
+      <span class="input-label">${v.label} <span style="color:var(--text-hint);font-weight:400;">(${v.unit})</span></span>
+      <input id="vital-${v.key}" class="input-field" placeholder="${v.placeholder}" style="height:44px;font-size:15px;"
+        oninput="checkVital('${v.key}')">
+      <div id="vital-warn-${v.key}" style="display:none;font-size:10px;color:var(--emergency);font-weight:600;margin-top:2px;">⚠️ 數值異常</div>
+    </div>`).join('');
+}
+function checkVital(key) {
+  const v = VITALS.find(x=>x.key===key);
+  const val = document.getElementById('vital-'+key).value;
+  const warn = document.getElementById('vital-warn-'+key);
+  if (val && v.abnorm(val)) {
+    warn.style.display='block';
+    document.getElementById('vital-'+key).style.borderColor='var(--emergency)';
+  } else {
+    warn.style.display='none';
+    document.getElementById('vital-'+key).style.borderColor='var(--divider)';
+  }
+}
+function voiceInput() {
+  const btn = document.getElementById('voiceBtn');
+  btn.innerHTML='🔴 語音輸入中…';
+  btn.style.background='var(--emergency-surface)';
+  btn.style.borderColor='var(--emergency)';
+  btn.style.color='var(--emergency)';
+  setTimeout(()=>{
+    document.getElementById('noteField').value='Nenek sudah makan dengan baik. Tekanan darah 125/82 mmHg, gula darah normal. Sudah mandi dan bersih.';
+    btn.innerHTML='🎙️ 長按語音輸入';
+    btn.style.background='var(--primary-surface)';
+    btn.style.borderColor='var(--primary)';
+    btn.style.color='var(--primary)';
+    showSnack('🎙️ 語音輸入完成（印尼語）');
+  }, 2000);
+}
+function doTranslate() {
+  const text = document.getElementById('noteField').value.trim();
+  if (!text) { showSnack('請先輸入備註文字'); return; }
+  const btn = document.getElementById('translateBtn');
+  btn.innerHTML='<span class="spinner" style="border-top-color:var(--primary);border-color:rgba(27,94,79,0.2)"></span> 翻譯中…';
+  btn.disabled=true;
+  setTimeout(()=>{
+    btn.innerHTML='🌐 翻譯'; btn.disabled=false;
+    const result = document.getElementById('translateResult');
+    const transMap = {
+      'Nenek sudah makan dengan baik. Tekanan darah 125/82 mmHg, gula darah normal. Sudah mandi dan bersih.':
+        '阿嬤今日飲食狀況良好，進食量充足。血壓 125/82 mmHg，血糖正常範圍。已協助洗澡，衛生清潔良好。'
+    };
+    document.getElementById('translateText').textContent =
+      transMap[text] || '（Claude AI 翻譯）照護紀錄：' + text;
+    result.style.display='block';
+    showSnack('✅ Claude AI 翻譯完成');
+  }, 1800);
+}
+function saveLog() {
+  const btn = document.getElementById('saveBtn');
+  btn.innerHTML='<span class="spinner"></span> 儲存中…';
+  btn.disabled=true;
+  setTimeout(()=>{
+    btn.innerHTML='💾 儲存照護紀錄'; btn.disabled=false;
+    showSnack('✅ 照護紀錄已儲存至 Firestore');
+    goScreen('screen-home');
+  }, 1200);
+}
+function toggleLang() { showSnack('🌐 切換語言：中文 ↔ Bahasa Indonesia'); }
+
+// ─── SOS ─────────────────────────────────────────────────────────────────────
+function triggerSOS() {
+  showSnack('📞 撥打 119 — 苗栗縣消防局緊急救護');
+}
+function selectEmergency(type) {
+  showSnack(`🆘 已選擇緊急類型：${type}，正在撥打 119…`);
+}
+function notifyFamily() {
+  const btn = document.getElementById('locationBtn');
+  btn.innerHTML='<span class="spinner"></span> 取得位置中…';
+  setTimeout(()=>{
+    document.getElementById('locationStatus').textContent='✅ 位置已傳送！家屬已收到通知';
+    btn.innerHTML='📍 已傳送：24.6817, 120.8749';
+    btn.style.background='var(--success)';
+    showSnack('📍 GPS 位置已寫入 Firestore，家屬推播已發送');
+  }, 1800);
+}
+function sendLocation() { notifyFamily(); }
+function callNumber(num) {
+  showSnack(`📞 撥打 ${num}…（模擬展示）`);
+}
+
+// ─── Medication ───────────────────────────────────────────────────────────────
+const levelColor = {A:'var(--success)',B:'var(--primary)',C:'var(--info)'};
+function buildMedList() {
+  const list = document.getElementById('medList');
+  list.innerHTML = MEDICATIONS.map(m=>`
+    <div class="card">
+      <div class="card-body">
+        <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;">
+          <span style="font-size:26px;">💊</span>
+          <div style="flex:1;">
+            <div style="font-size:16px;font-weight:700;color:var(--text-primary);">${m.name}</div>
+            <div style="font-size:12px;color:var(--primary);">${m.nameId}</div>
+          </div>
+          <span style="background:var(--primary-surface);color:var(--primary);padding:4px 10px;border-radius:8px;font-size:12px;font-weight:700;">${m.dosage.split(' ')[1]||m.dosage}</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;" id="times-${m.id}">
+          ${m.times.map(t=>buildTimeSlot(m.id,t)).join('')}
+        </div>
+      </div>
+    </div>`).join('');
+}
+function buildTimeSlot(medId, time) {
+  const med = MEDICATIONS.find(m=>m.id===medId);
+  const taken = med.taken[time];
+  const skipped = med.skipped[time];
+  const bg = taken ? 'var(--success-surface)' : skipped ? 'var(--emergency-surface)' : 'var(--surface)';
+  const border = taken ? 'var(--success)' : skipped ? 'var(--emergency)' : 'var(--divider)';
+  const timeColor = taken ? 'var(--success)' : skipped ? 'var(--emergency)' : 'var(--text-secondary)';
+  return `<div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:6px;">
+    <span style="font-size:13px;font-weight:700;color:${timeColor};">${time}</span>
+    ${taken ? '<span style="color:var(--success);font-size:14px;">✓</span>'
+    : skipped ? '<span style="color:var(--emergency);font-size:14px;">✕</span>'
+    : `<span onclick="recordMed(${medId},'${time}',true)" style="background:var(--success);color:white;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;cursor:pointer;">✓已服</span>
+       <span onclick="recordMed(${medId},'${time}',false)" style="background:var(--emergency);color:white;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;cursor:pointer;">✕未服</span>`}
+  </div>`;
+}
+function recordMed(medId, time, taken) {
+  const med = MEDICATIONS.find(m=>m.id===medId);
+  if (taken) med.taken[time]=true; else med.skipped[time]=true;
+  buildMedList();
+  showSnack(taken ? `✅ 已記錄 ${med.name} ${time} 已服用` : `⚠️ 已記錄 ${med.name} ${time} 未服用`);
+}
+function showAddMed() { document.getElementById('addMedModal').style.display='block'; }
+function hideAddMed() { document.getElementById('addMedModal').style.display='none'; }
+function saveMed() {
+  const name=document.getElementById('medNameZh').value.trim();
+  if (!name) { showSnack('請輸入藥品名稱'); return; }
+  MEDICATIONS.push({id:Date.now(),name,nameId:document.getElementById('medNameId').value||name,
+    dosage:document.getElementById('medDose').value||'—',times:['08:00'],taken:{},skipped:{}});
+  buildMedList(); hideAddMed();
+  showSnack(`✅ 已新增藥品：${name}`);
+}
+function addTime() { showSnack('⏰ 時間選擇器（Flutter showTimePicker）'); }
+
+// ─── Resource Map ─────────────────────────────────────────────────────────────
+function buildTownshipChips() {
+  const towns = [...new Set(RESOURCES.map(r=>r.township))];
+  const c = document.getElementById('townshipChips');
+  c.innerHTML = `<div class="twn-chip active-twn" data-twn="" onclick="setTownship(this,'')"
+    style="white-space:nowrap;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;cursor:pointer;background:var(--primary-surface);color:var(--primary);border:1px solid var(--primary);">全鄉鎮</div>
+  `+towns.map(t=>`<div class="twn-chip" data-twn="${t}" onclick="setTownship(this,'${t}')"
+    style="white-space:nowrap;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:500;cursor:pointer;background:white;color:var(--text-secondary);border:1px solid var(--divider);">${t}</div>`).join('');
+}
+function setLevel(el, level) {
+  mapLevel = level;
+  document.querySelectorAll('.level-chip').forEach(c=>{
+    const l=c.dataset.level;
+    const col = l==='A'?'var(--success)':l==='B'?'var(--primary)':'var(--info)';
+    c.style.background=(!l&&!level)||l===level?'var(--primary)':'white';
+    if (l&&l!==level){c.style.background='white';c.style.color=col;}
+    if (l&&l===level){c.style.background=col;c.style.color='white';}
+    if (!l&&!level){c.style.background='var(--primary)';c.style.color='white';}
+    if (!l&&level){c.style.background='white';c.style.color='var(--text-hint)';}
+  });
+  filterResources();
+}
+function setTownship(el, twn) {
+  mapTownship = twn;
+  document.querySelectorAll('.twn-chip').forEach(c=>{
+    const isActive = c.dataset.twn===twn;
+    c.style.background=isActive?'var(--primary-surface)':'white';
+    c.style.color=isActive?'var(--primary)':'var(--text-secondary)';
+    c.style.borderColor=isActive?'var(--primary)':'var(--divider)';
+    c.style.fontWeight=isActive?'700':'500';
+  });
+  filterResources();
+}
+function filterResources() {
+  const kw = (document.getElementById('mapSearch')?.value||'').toLowerCase();
+  const filtered = RESOURCES.filter(r=>{
+    if (mapLevel && r.level!==mapLevel) return false;
+    if (mapTownship && r.township!==mapTownship) return false;
+    if (kw && !r.name.includes(kw)&&!r.address.includes(kw)&&!r.township.includes(kw)) return false;
+    return true;
+  });
+  document.getElementById('mapCount').textContent=`找到 ${filtered.length} 間機構`;
+  buildResourceList(filtered);
+}
+function buildResourceList(list) {
+  const data = list || RESOURCES;
+  const el = document.getElementById('resourceList');
+  if (!el) return;
+  const lc={A:'var(--success)',B:'var(--primary)',C:'var(--info)'};
+  el.innerHTML = data.map(r=>`
+    <div onclick="showResourceDetail('${r.id}')" style="background:white;border-radius:var(--radius-card);padding:14px;margin-bottom:8px;box-shadow:var(--card-shadow);cursor:pointer;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="background:rgba(0,0,0,0.05);border:1px solid ${lc[r.level]};color:${lc[r.level]};padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;">${r.level} 級</span>
+        <span style="background:var(--surface);color:var(--text-hint);padding:3px 6px;border-radius:4px;font-size:11px;">${r.township}</span>
+        <div style="flex:1;"></div>
+        <div onclick="event.stopPropagation();callNumber('${r.phone}')" style="background:var(--primary-surface);padding:4px 10px;border-radius:8px;display:flex;align-items:center;gap:4px;cursor:pointer;">
+          <span style="font-size:13px;">📞</span><span style="font-size:12px;color:var(--primary);font-weight:600;">撥打</span>
+        </div>
+      </div>
+      <div style="font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">${r.name}</div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-secondary);">
+        <span>📍</span><span>${r.address}</span>
+      </div>
+    </div>`).join('');
+}
+function showResourceDetail(id) {
+  const r = RESOURCES.find(x=>x.id===id);
+  if (!r) return;
+  showSnack(`📋 ${r.name}｜${r.phone}｜${r.address}`);
+}
+function refreshMap() {
+  showSnack('🔄 正在從衛福部開放資料更新…');
+  setTimeout(()=>showSnack('✅ 資料已更新（18 間機構）'), 1500);
+}
+
+// ─── Profile ──────────────────────────────────────────────────────────────────
+function toggleSetting(type) {
+  const map={lang:'🌐 語言設定',elder:'👴 長者模式已切換',notification:'🔔 通知設定已更新',prayer:'🕌 禱告提醒已切換'};
+  showSnack(map[type]||'設定已更新');
+}
+function doLogout() {
+  goScreen('screen-auth');
+  document.getElementById('phoneInput').value='';
+  document.getElementById('loginBtn').innerHTML='發送驗證碼 / Kirim OTP';
+  document.getElementById('loginBtn').disabled=false;
+  showSnack('已登出');
+}
+
+// ─── Snackbar ─────────────────────────────────────────────────────────────────
+let snackTimer;
+function showSnack(msg) {
+  const el=document.getElementById('snackbar');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(snackTimer);
+  snackTimer=setTimeout(()=>el.classList.remove('show'), 2800);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', ()=>{
+  buildCareGrid(); buildVitals(); buildMedList();
+  buildResourceList(); buildTownshipChips();
+  // Show sync badge for demo
+  setTimeout(()=>{ document.getElementById('syncBadge').style.display='block'; }, 3000);
+});
+</script>
+</body>
+</html>
