@@ -28,25 +28,25 @@ class DefaultFirebaseOptions {
     apiKey: 'YOUR_ANDROID_API_KEY',
     appId: '1:000000000000:android:xxxxxxxxxxxxxxxx',
     messagingSenderId: '000000000000',
-    projectId: 'antsicare-miaoli',
-    storageBucket: 'antsicare-miaoli.appspot.com',
+    projectId: 'antsicare-tw',
+    storageBucket: 'antsicare-tw.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'YOUR_IOS_API_KEY',
     appId: '1:000000000000:ios:xxxxxxxxxxxxxxxx',
     messagingSenderId: '000000000000',
-    projectId: 'antsicare-miaoli',
-    storageBucket: 'antsicare-miaoli.appspot.com',
-    iosBundleId: 'tw.miaoli.antsicare',
+    projectId: 'antsicare-tw',
+    storageBucket: 'antsicare-tw.appspot.com',
+    iosBundleId: 'tw.antsicare.app',
   );
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'YOUR_WEB_API_KEY',
     appId: '1:000000000000:web:xxxxxxxxxxxxxxxx',
     messagingSenderId: '000000000000',
-    projectId: 'antsicare-miaoli',
-    storageBucket: 'antsicare-miaoli.appspot.com',
-    authDomain: 'antsicare-miaoli.firebaseapp.com',
+    projectId: 'antsicare-tw',
+    storageBucket: 'antsicare-tw.appspot.com',
+    authDomain: 'antsicare-tw.firebaseapp.com',
   );
 }

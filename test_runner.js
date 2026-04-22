@@ -163,6 +163,11 @@ class LtcResourceModel {
   }
 }
 
+function filterByCounty(all, county) {
+  if (!county) return all;
+  return all.filter(r => r.county === county);
+}
+
 function filterByLevel(all, level) {
   if (!level) return all;
   return all.filter(r => r.level === level);
@@ -183,31 +188,63 @@ function search(all, keyword) {
   );
 }
 
+// 多縣市測試資料（涵蓋全台 6 縣市）
 const sampleResources = [
-  new LtcResourceModel({ id: '1', name: '頭份市長照旗艦店', level: 'A', county: '苗栗縣', township: '頭份市', address: '頭份市中正路100號', phone: '037-680001' }),
-  new LtcResourceModel({ id: '2', name: '苗栗市複合型中心', level: 'B', county: '苗栗縣', township: '苗栗市', address: '苗栗市中山路200號' }),
-  new LtcResourceModel({ id: '3', name: '竹南鎮巷弄長照站', level: 'C', county: '苗栗縣', township: '竹南鎮', address: '竹南鎮民主路50號' }),
-  new LtcResourceModel({ id: '4', name: '苗栗市旗艦整合中心', level: 'A', county: '苗栗縣', township: '苗栗市', address: '苗栗市縣府路8號' }),
-  new LtcResourceModel({ id: '5', name: '大湖鄉偏鄉照護站', level: 'C', county: '苗栗縣', township: '大湖鄉', address: '大湖鄉大湖路50號' }),
+  new LtcResourceModel({ id: '1',  name: '台北市大安區長照旗艦中心',     level: 'A', county: '台北市', township: '大安區', address: '台北市大安區信義路100號', phone: '02-27001001' }),
+  new LtcResourceModel({ id: '2',  name: '台北市信義區長照複合服務中心',  level: 'B', county: '台北市', township: '信義區', address: '台北市信義區松仁路200號', phone: '02-27001002' }),
+  new LtcResourceModel({ id: '3',  name: '台北市萬華區巷弄長照站',        level: 'C', county: '台北市', township: '萬華區', address: '台北市萬華區西園路50號',  phone: '02-23001003' }),
+  new LtcResourceModel({ id: '4',  name: '台中市西屯區長照旗艦中心',      level: 'A', county: '台中市', township: '西屯區', address: '台中市西屯區台灣大道100號' }),
+  new LtcResourceModel({ id: '5',  name: '台中市大里區巷弄長照站',        level: 'C', county: '台中市', township: '大里區', address: '台中市大里區中興路50號' }),
+  new LtcResourceModel({ id: '6',  name: '高雄市苓雅區長照旗艦中心',      level: 'A', county: '高雄市', township: '苓雅區', address: '高雄市苓雅區四維三路100號', phone: '07-33601001' }),
+  new LtcResourceModel({ id: '7',  name: '高雄市旗山區巷弄長照站',        level: 'C', county: '高雄市', township: '旗山區', address: '高雄市旗山區中山路50號' }),
+  new LtcResourceModel({ id: '8',  name: '苗栗縣頭份市長照旗艦店',        level: 'A', county: '苗栗縣', township: '頭份市', address: '苗栗縣頭份市中正路100號', phone: '037-680001' }),
+  new LtcResourceModel({ id: '9',  name: '苗栗市長照複合型服務中心',      level: 'B', county: '苗栗縣', township: '苗栗市', address: '苗栗縣苗栗市中山路200號', phone: '037-330002' }),
+  new LtcResourceModel({ id: '10', name: '花蓮市長照旗艦中心',            level: 'A', county: '花蓮縣', township: '花蓮市', address: '花蓮縣花蓮市中山路100號', phone: '03-83201001' }),
 ];
 
+group('filterByCounty', () => {
+  test('篩選台北市 → 3 筆', () => {
+    expect(filterByCounty(sampleResources, '台北市').length).toBe(3);
+  });
+
+  test('篩選苗栗縣 → 2 筆', () => {
+    expect(filterByCounty(sampleResources, '苗栗縣').length).toBe(2);
+  });
+
+  test('篩選花蓮縣 → 1 筆', () => {
+    expect(filterByCounty(sampleResources, '花蓮縣').length).toBe(1);
+  });
+
+  test('county null → 全部 10 筆', () => {
+    expect(filterByCounty(sampleResources, null).length).toBe(10);
+  });
+
+  test('county 空字串 → 全部 10 筆', () => {
+    expect(filterByCounty(sampleResources, '').length).toBe(10);
+  });
+
+  test('不存在縣市 → 0 筆', () => {
+    expect(filterByCounty(sampleResources, '連江縣').length).toBe(0);
+  });
+});
+
 group('filterByLevel', () => {
-  test('篩選 A 級機構 → 2 筆', () => {
+  test('篩選 A 級機構 → 5 筆', () => {
     const result = filterByLevel(sampleResources, 'A');
-    expect(result.length).toBe(2);
+    expect(result.length).toBe(5);
     expect(result.every(r => r.level === 'A')).toBeTruthy();
   });
 
-  test('篩選 C 級機構 → 2 筆', () => {
-    expect(filterByLevel(sampleResources, 'C').length).toBe(2);
+  test('篩選 C 級機構 → 3 筆', () => {
+    expect(filterByLevel(sampleResources, 'C').length).toBe(3);
   });
 
-  test('level 為 null → 全部 5 筆', () => {
-    expect(filterByLevel(sampleResources, null).length).toBe(5);
+  test('level 為 null → 全部 10 筆', () => {
+    expect(filterByLevel(sampleResources, null).length).toBe(10);
   });
 
-  test('level 為空字串 → 全部 5 筆', () => {
-    expect(filterByLevel(sampleResources, '').length).toBe(5);
+  test('level 為空字串 → 全部 10 筆', () => {
+    expect(filterByLevel(sampleResources, '').length).toBe(10);
   });
 
   test('不存在的等級 → 0 筆', () => {
@@ -216,8 +253,8 @@ group('filterByLevel', () => {
 });
 
 group('filterByTownship', () => {
-  test('篩選苗栗市 → 2 筆', () => {
-    expect(filterByTownship(sampleResources, '苗栗市').length).toBe(2);
+  test('篩選苗栗市 → 1 筆', () => {
+    expect(filterByTownship(sampleResources, '苗栗市').length).toBe(1);
   });
 
   test('篩選頭份市 → 1 筆', () => {
@@ -225,7 +262,7 @@ group('filterByTownship', () => {
   });
 
   test('township null → 全部', () => {
-    expect(filterByTownship(sampleResources, null).length).toBe(5);
+    expect(filterByTownship(sampleResources, null).length).toBe(10);
   });
 
   test('不存在鄉鎮 → 0 筆', () => {
@@ -234,24 +271,24 @@ group('filterByTownship', () => {
 });
 
 group('search', () => {
-  test('搜尋「旗艦」→ 2 筆', () => {
-    expect(search(sampleResources, '旗艦').length).toBe(2);
+  test('搜尋「旗艦」→ 5 筆（含全台各縣市旗艦中心）', () => {
+    expect(search(sampleResources, '旗艦').length).toBe(5);
   });
 
-  test('搜尋「巷弄」→ 1 筆', () => {
-    expect(search(sampleResources, '巷弄').length).toBe(1);
+  test('搜尋「巷弄」→ 3 筆（含台北/台中/高雄）', () => {
+    expect(search(sampleResources, '巷弄').length).toBe(3);
   });
 
-  test('搜尋地址關鍵字「中山路」→ 1 筆', () => {
-    expect(search(sampleResources, '中山路').length).toBe(1);
+  test('搜尋地址關鍵字「中山路」→ 3 筆（旗山/苗栗/花蓮）', () => {
+    expect(search(sampleResources, '中山路').length).toBe(3);
   });
 
-  test('搜尋鄉鎮名稱「大湖」→ 1 筆', () => {
-    expect(search(sampleResources, '大湖').length).toBe(1);
+  test('搜尋「大安區」→ 1 筆', () => {
+    expect(search(sampleResources, '大安區').length).toBe(1);
   });
 
   test('空字串 → 全部', () => {
-    expect(search(sampleResources, '').length).toBe(5);
+    expect(search(sampleResources, '').length).toBe(10);
   });
 
   test('不存在關鍵字 → 0 筆', () => {

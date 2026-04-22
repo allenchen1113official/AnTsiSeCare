@@ -330,7 +330,7 @@ body {
   <div class="phone-notch"><div class="notch-island"></div></div>
   <div class="status-bar">
     <span>9:41</span>
-    <span>🇹🇼 苗栗縣</span>
+    <span>🇹🇼 台灣</span>
     <span>📶 100%</span>
   </div>
   <div class="screen-container" id="screenContainer">
@@ -345,7 +345,7 @@ body {
           <div style="width:80px;height:80px;background:var(--primary-surface);border-radius:20px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:40px;">❤️</div>
           <div style="font-size:28px;font-weight:700;color:var(--primary);">安心照護</div>
           <div style="font-size:14px;color:var(--text-secondary);margin-top:4px;">AnTsiSeCare</div>
-          <div style="font-size:12px;color:var(--text-hint);margin-top:2px;">苗栗縣長照服務整合平台</div>
+          <div style="font-size:12px;color:var(--text-hint);margin-top:2px;">全台長照服務整合平台</div>
         </div>
         <!-- Phone input -->
         <div style="margin-bottom:12px;">
@@ -642,11 +642,28 @@ body {
         <div class="level-chip" data-level="B" onclick="setLevel(this,'B')" style="white-space:nowrap;padding:6px 14px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:white;color:var(--primary);border:1px solid var(--primary);">B 級</div>
         <div class="level-chip" data-level="C" onclick="setLevel(this,'C')" style="white-space:nowrap;padding:6px 14px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:white;color:var(--info);border:1px solid var(--info);">C 級</div>
       </div>
-      <!-- Township filter -->
-      <div style="display:flex;gap:6px;padding:4px 16px 6px;overflow-x:auto;" id="townshipChips">
+      <!-- County selector -->
+      <div style="padding:4px 16px 2px;">
+        <select id="countySelect" onchange="setCounty(this.value)"
+          style="width:100%;height:40px;border:1px solid var(--divider);border-radius:8px;padding:0 12px;font-size:14px;color:var(--text-primary);background:white;cursor:pointer;">
+          <option value="">🗺️ 全台灣</option>
+          <option value="台北市">台北市</option><option value="新北市">新北市</option>
+          <option value="桃園市">桃園市</option><option value="台中市">台中市</option>
+          <option value="台南市">台南市</option><option value="高雄市">高雄市</option>
+          <option value="基隆市">基隆市</option><option value="新竹市">新竹市</option>
+          <option value="嘉義市">嘉義市</option><option value="新竹縣">新竹縣</option>
+          <option value="苗栗縣">苗栗縣</option><option value="彰化縣">彰化縣</option>
+          <option value="南投縣">南投縣</option><option value="雲林縣">雲林縣</option>
+          <option value="嘉義縣">嘉義縣</option><option value="屏東縣">屏東縣</option>
+          <option value="宜蘭縣">宜蘭縣</option><option value="花蓮縣">花蓮縣</option>
+          <option value="台東縣">台東縣</option><option value="澎湖縣">澎湖縣</option>
+          <option value="金門縣">金門縣</option><option value="連江縣">連江縣</option>
+        </select>
       </div>
+      <!-- Township filter (dynamic) -->
+      <div style="display:flex;gap:6px;padding:4px 16px 6px;overflow-x:auto;" id="townshipChips"></div>
       <!-- Count -->
-      <div style="padding:2px 16px 4px;font-size:12px;color:var(--text-hint);" id="mapCount">找到 18 間機構</div>
+      <div style="padding:2px 16px 4px;font-size:12px;color:var(--text-hint);" id="mapCount">找到 26 間機構</div>
       <!-- Resource list -->
       <div style="flex:1;overflow-y:auto;padding:4px 16px 16px;" id="resourceList">
         <!-- injected by JS -->
@@ -669,7 +686,7 @@ body {
           <div style="font-size:13px;color:rgba(255,255,255,0.75);margin-top:2px;">照服員 / Caregiver · 🇮🇩 印尼</div>
           <div style="display:flex;justify-content:center;gap:8px;margin-top:12px;">
             <span style="background:rgba(255,255,255,0.2);color:white;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:600;">照服員</span>
-            <span style="background:rgba(255,255,255,0.2);color:white;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:600;">苗栗縣</span>
+            <span style="background:rgba(255,255,255,0.2);color:white;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:600;">全台服務</span>
           </div>
         </div>
         <!-- Settings -->
@@ -763,24 +780,43 @@ const VITALS = [
   {key:'weight',label:'體重',  unit:'kg',   placeholder:'58',     abnorm: ()=>false},
 ];
 const RESOURCES = [
-  {id:'ml001',name:'頭份市長照旗艦店',level:'A',township:'頭份市',address:'頭份市中正路100號',phone:'037-680001'},
-  {id:'ml002',name:'苗栗市長照複合型服務中心',level:'B',township:'苗栗市',address:'苗栗市中山路200號',phone:'037-330002'},
-  {id:'ml003',name:'竹南鎮巷弄長照站',level:'C',township:'竹南鎮',address:'竹南鎮民主路50號',phone:'037-470003'},
-  {id:'ml004',name:'苑裡鎮長照複合服務中心',level:'B',township:'苑裡鎮',address:'苑裡鎮中山路180號',phone:'037-740004'},
-  {id:'ml005',name:'通霄鎮關懷據點',level:'C',township:'通霄鎮',address:'通霄鎮中正路30號',phone:'037-780005'},
-  {id:'ml006',name:'後龍鎮長照服務中心',level:'B',township:'後龍鎮',address:'後龍鎮大山路60號',phone:'037-720006'},
-  {id:'ml007',name:'銅鑼鄉社區照顧關懷據點',level:'C',township:'銅鑼鄉',address:'銅鑼鄉中興路20號',phone:'037-980007'},
-  {id:'ml008',name:'三義鄉長照巷弄站',level:'C',township:'三義鄉',address:'三義鄉民生路10號',phone:'037-870008'},
-  {id:'ml009',name:'公館鄉長照複合型中心',level:'B',township:'公館鄉',address:'公館鄉館南路100號',phone:'037-230009'},
-  {id:'ml010',name:'大湖鄉偏鄉長照服務站',level:'C',township:'大湖鄉',address:'大湖鄉大湖路50號',phone:'037-990010'},
-  {id:'ml011',name:'南庄鄉原住民長照據點',level:'C',township:'南庄鄉',address:'南庄鄉南江村30號',phone:'037-820011'},
-  {id:'ml012',name:'卓蘭鎮長照複合型中心',level:'B',township:'卓蘭鎮',address:'卓蘭鎮老庄里100號',phone:'04-25891012'},
-  {id:'ml013',name:'苗栗市旗艦型整合服務中心',level:'A',township:'苗栗市',address:'苗栗市縣府路8號',phone:'037-351013'},
-  {id:'ml014',name:'頭份市北區長照站',level:'C',township:'頭份市',address:'頭份市信義路88號',phone:'037-680014'},
-  {id:'ml015',name:'造橋鄉社區長照關懷站',level:'C',township:'造橋鄉',address:'造橋鄉造橋村5號',phone:'037-540015'},
-  {id:'ml016',name:'獅潭鄉偏鄉照護站',level:'C',township:'獅潭鄉',address:'獅潭鄉新店村10號',phone:'037-930016'},
-  {id:'ml017',name:'三灣鄉長照據點',level:'C',township:'三灣鄉',address:'三灣鄉三灣村20號',phone:'037-830017'},
-  {id:'ml018',name:'泰安鄉泰雅族長照服務站',level:'C',township:'泰安鄉',address:'泰安鄉錦水村1號',phone:'037-991018'},
+  // 台北市
+  {id:'tp001',name:'台北市大安區長照旗艦中心',level:'A',county:'台北市',township:'大安區',address:'台北市大安區信義路四段100號',phone:'02-27001001'},
+  {id:'tp002',name:'台北市信義區長照複合服務中心',level:'B',county:'台北市',township:'信義區',address:'台北市信義區松仁路200號',phone:'02-27001002'},
+  {id:'tp003',name:'台北市萬華區巷弄長照站',level:'C',county:'台北市',township:'萬華區',address:'台北市萬華區西園路50號',phone:'02-23001003'},
+  // 新北市
+  {id:'nt001',name:'新北市板橋區長照旗艦中心',level:'A',county:'新北市',township:'板橋區',address:'新北市板橋區中山路一段100號',phone:'02-29601001'},
+  {id:'nt002',name:'新北市新莊區長照複合服務中心',level:'B',county:'新北市',township:'新莊區',address:'新北市新莊區中正路200號',phone:'02-29001002'},
+  {id:'nt003',name:'新北市淡水區巷弄長照站',level:'C',county:'新北市',township:'淡水區',address:'新北市淡水區中正路50號',phone:'02-26201003'},
+  // 桃園市
+  {id:'ty001',name:'桃園市桃園區長照旗艦中心',level:'A',county:'桃園市',township:'桃園區',address:'桃園市桃園區中正路100號',phone:'03-33001001'},
+  {id:'ty002',name:'桃園市中壢區長照複合服務中心',level:'B',county:'桃園市',township:'中壢區',address:'桃園市中壢區中山路200號',phone:'03-42201002'},
+  // 台中市
+  {id:'tc001',name:'台中市西屯區長照旗艦中心',level:'A',county:'台中市',township:'西屯區',address:'台中市西屯區台灣大道三段100號',phone:'04-23001001'},
+  {id:'tc002',name:'台中市豐原區長照複合服務中心',level:'B',county:'台中市',township:'豐原區',address:'台中市豐原區中山路200號',phone:'04-25201002'},
+  {id:'tc003',name:'台中市大里區巷弄長照站',level:'C',county:'台中市',township:'大里區',address:'台中市大里區中興路50號',phone:'04-24081003'},
+  // 台南市
+  {id:'tn001',name:'台南市東區長照旗艦中心',level:'A',county:'台南市',township:'東區',address:'台南市東區東門路一段100號',phone:'06-27001001'},
+  {id:'tn002',name:'台南市永康區長照複合服務中心',level:'B',county:'台南市',township:'永康區',address:'台南市永康區中正路200號',phone:'06-27001002'},
+  // 高雄市
+  {id:'ks001',name:'高雄市苓雅區長照旗艦中心',level:'A',county:'高雄市',township:'苓雅區',address:'高雄市苓雅區四維三路100號',phone:'07-33601001'},
+  {id:'ks002',name:'高雄市鳳山區長照複合服務中心',level:'B',county:'高雄市',township:'鳳山區',address:'高雄市鳳山區中山東路200號',phone:'07-74601002'},
+  {id:'ks003',name:'高雄市旗山區巷弄長照站',level:'C',county:'高雄市',township:'旗山區',address:'高雄市旗山區中山路50號',phone:'07-66101003'},
+  // 苗栗縣
+  {id:'ml001',name:'苗栗縣頭份市長照旗艦店',level:'A',county:'苗栗縣',township:'頭份市',address:'苗栗縣頭份市中正路100號',phone:'037-680001'},
+  {id:'ml002',name:'苗栗市長照複合型服務中心',level:'B',county:'苗栗縣',township:'苗栗市',address:'苗栗縣苗栗市中山路200號',phone:'037-330002'},
+  {id:'ml003',name:'竹南鎮巷弄長照站',level:'C',county:'苗栗縣',township:'竹南鎮',address:'苗栗縣竹南鎮民主路50號',phone:'037-470003'},
+  // 彰化縣
+  {id:'ch001',name:'彰化市長照旗艦中心',level:'A',county:'彰化縣',township:'彰化市',address:'彰化縣彰化市中山路一段100號',phone:'04-72801001'},
+  {id:'ch002',name:'員林市長照複合服務中心',level:'B',county:'彰化縣',township:'員林市',address:'彰化縣員林市中山路200號',phone:'04-83201002'},
+  // 花蓮縣
+  {id:'hl001',name:'花蓮市長照旗艦中心',level:'A',county:'花蓮縣',township:'花蓮市',address:'花蓮縣花蓮市中山路100號',phone:'03-83201001'},
+  // 台東縣
+  {id:'tt001',name:'台東市長照旗艦中心',level:'A',county:'台東縣',township:'台東市',address:'台東縣台東市中正路100號',phone:'089-33201001'},
+  // 澎湖縣
+  {id:'ph001',name:'馬公市長照旗艦中心',level:'A',county:'澎湖縣',township:'馬公市',address:'澎湖縣馬公市中正路100號',phone:'06-92601001'},
+  // 金門縣
+  {id:'km001',name:'金城鎮長照複合服務中心',level:'B',county:'金門縣',township:'金城鎮',address:'金門縣金城鎮中正路100號',phone:'082-32401001'},
 ];
 const MEDICATIONS = [
   {id:1,name:'血壓藥',nameId:'Obat darah tinggi',dosage:'amlodipine 5mg×1',times:['08:00','20:00'],taken:{},skipped:{}},
@@ -792,6 +828,7 @@ const MEDICATIONS = [
 let careItemStates = {};  // key → 'normal'|'abnormal'|null
 let currentLang = 'zh-TW';
 let mapLevel = '';
+let mapCounty = '';
 let mapTownship = '';
 
 // ─── 導覽 ─────────────────────────────────────────────────────────────────────
@@ -963,7 +1000,7 @@ function toggleLang() { showSnack('🌐 切換語言：中文 ↔ Bahasa Indones
 
 // ─── SOS ─────────────────────────────────────────────────────────────────────
 function triggerSOS() {
-  showSnack('📞 撥打 119 — 苗栗縣消防局緊急救護');
+  showSnack('📞 撥打 119 — 全國消防局緊急救護');
 }
 function selectEmergency(type) {
   showSnack(`🆘 已選擇緊急類型：${type}，正在撥打 119…`);
@@ -1039,12 +1076,20 @@ function addTime() { showSnack('⏰ 時間選擇器（Flutter showTimePicker）'
 
 // ─── Resource Map ─────────────────────────────────────────────────────────────
 function buildTownshipChips() {
-  const towns = [...new Set(RESOURCES.map(r=>r.township))];
+  const pool = mapCounty ? RESOURCES.filter(r=>r.county===mapCounty) : [];
+  const towns = [...new Set(pool.map(r=>r.township))];
   const c = document.getElementById('townshipChips');
+  if (!towns.length) { c.innerHTML=''; return; }
   c.innerHTML = `<div class="twn-chip active-twn" data-twn="" onclick="setTownship(this,'')"
     style="white-space:nowrap;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;cursor:pointer;background:var(--primary-surface);color:var(--primary);border:1px solid var(--primary);">全鄉鎮</div>
   `+towns.map(t=>`<div class="twn-chip" data-twn="${t}" onclick="setTownship(this,'${t}')"
     style="white-space:nowrap;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:500;cursor:pointer;background:white;color:var(--text-secondary);border:1px solid var(--divider);">${t}</div>`).join('');
+}
+function setCounty(val) {
+  mapCounty = val;
+  mapTownship = '';
+  buildTownshipChips();
+  filterResources();
 }
 function setLevel(el, level) {
   mapLevel = level;
@@ -1073,9 +1118,10 @@ function setTownship(el, twn) {
 function filterResources() {
   const kw = (document.getElementById('mapSearch')?.value||'').toLowerCase();
   const filtered = RESOURCES.filter(r=>{
+    if (mapCounty && r.county!==mapCounty) return false;
     if (mapLevel && r.level!==mapLevel) return false;
     if (mapTownship && r.township!==mapTownship) return false;
-    if (kw && !r.name.includes(kw)&&!r.address.includes(kw)&&!r.township.includes(kw)) return false;
+    if (kw && !r.name.toLowerCase().includes(kw)&&!r.address.toLowerCase().includes(kw)&&!(r.township||'').includes(kw)&&!(r.county||'').includes(kw)) return false;
     return true;
   });
   document.getElementById('mapCount').textContent=`找到 ${filtered.length} 間機構`;
@@ -1109,7 +1155,7 @@ function showResourceDetail(id) {
 }
 function refreshMap() {
   showSnack('🔄 正在從衛福部開放資料更新…');
-  setTimeout(()=>showSnack('✅ 資料已更新（18 間機構）'), 1500);
+  setTimeout(()=>showSnack('✅ 資料已更新（全台 26 間示範機構）'), 1500);
 }
 
 // ─── Profile ──────────────────────────────────────────────────────────────────

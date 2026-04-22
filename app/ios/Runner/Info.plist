@@ -7,7 +7,7 @@
     <key>CFBundleDisplayName</key>
     <string>安心照護</string>
     <key>CFBundleIdentifier</key>
-    <string>tw.miaoli.antsicare</string>
+    <string>tw.antsicare.app</string>
     <key>CFBundleName</key>
     <string>AnTsiSeCare</string>
     <key>CFBundleShortVersionString</key>
