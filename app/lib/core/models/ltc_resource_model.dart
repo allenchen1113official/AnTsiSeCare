@@ -50,7 +50,7 @@ class LtcResourceModel {
         id: map['id'] ?? '',
         name: map['name'] ?? '',
         level: map['level'] ?? 'C',
-        county: map['county'] ?? '苗栗縣',
+        county: map['county'] ?? '',
         township: map['township'] ?? '',
         address: map['address'] ?? '',
         phone: map['phone'],

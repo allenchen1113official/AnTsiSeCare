@@ -20,7 +20,8 @@ class _ResourceMapScreenState extends State<ResourceMapScreen> {
   bool _loading = true;
 
   String _searchText = '';
-  String? _selectedLevel;   // null = 全部
+  String? _selectedLevel;    // null = 全部
+  String? _selectedCounty;   // null = 全台
   String? _selectedTownship;
 
   final _searchCtrl = TextEditingController();
@@ -39,7 +40,7 @@ class _ResourceMapScreenState extends State<ResourceMapScreen> {
 
   Future<void> _loadData({bool forceRefresh = false}) async {
     setState(() => _loading = true);
-    final data = await LtcDataService.getMiaoliResources(
+    final data = await LtcDataService.getTaiwanResources(
       forceRefresh: forceRefresh);
     setState(() {
       _all = data;
@@ -50,10 +51,16 @@ class _ResourceMapScreenState extends State<ResourceMapScreen> {
 
   void _applyFilters() {
     var result = _all;
+    result = LtcDataService.filterByCounty(result, _selectedCounty);
     result = LtcDataService.filterByLevel(result, _selectedLevel);
     result = LtcDataService.filterByTownship(result, _selectedTownship);
     result = LtcDataService.search(result, _searchText);
     setState(() => _filtered = result);
+  }
+
+  List<String> get _currentTownships {
+    if (_selectedCounty == null) return [];
+    return AppConstants.countyTownships[_selectedCounty] ?? [];
   }
 
   @override
@@ -127,29 +134,56 @@ class _ResourceMapScreenState extends State<ResourceMapScreen> {
             ),
           ),
 
-          // ── 鄉鎮市篩選 ──────────────────────────────────────────────────
-          SizedBox(
-            height: 36,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                _TownshipChip(label: '全鄉鎮', selected: _selectedTownship == null,
-                  onTap: () { setState(() => _selectedTownship = null); _applyFilters(); }),
-                ...AppConstants.miaoliTownships.map((t) =>
-                  Padding(
-                    padding: const EdgeInsets.only(left: 6),
-                    child: _TownshipChip(label: t,
-                      selected: _selectedTownship == t,
-                      onTap: () {
-                        setState(() => _selectedTownship =
-                            _selectedTownship == t ? null : t);
-                        _applyFilters();
-                      }),
-                  )),
+          // ── 縣市下拉選單 ────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+            child: DropdownButtonFormField<String?>(
+              value: _selectedCounty,
+              isDense: true,
+              decoration: const InputDecoration(
+                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                prefixIcon: Icon(Icons.map_rounded, size: 18),
+              ),
+              hint: const Text('全台灣'),
+              items: [
+                const DropdownMenuItem<String?>(value: null, child: Text('全台灣')),
+                ...AppConstants.taiwanCounties.map((c) =>
+                  DropdownMenuItem<String?>(value: c, child: Text(c))),
               ],
+              onChanged: (v) {
+                setState(() {
+                  _selectedCounty = v;
+                  _selectedTownship = null;
+                });
+                _applyFilters();
+              },
             ),
           ),
+
+          // ── 鄉鎮市篩選 chips（依選定縣市動態顯示）────────────────────────
+          if (_currentTownships.isNotEmpty)
+            SizedBox(
+              height: 36,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                children: [
+                  _TownshipChip(label: '全鄉鎮', selected: _selectedTownship == null,
+                    onTap: () { setState(() => _selectedTownship = null); _applyFilters(); }),
+                  ..._currentTownships.map((t) =>
+                    Padding(
+                      padding: const EdgeInsets.only(left: 6),
+                      child: _TownshipChip(label: t,
+                        selected: _selectedTownship == t,
+                        onTap: () {
+                          setState(() => _selectedTownship =
+                              _selectedTownship == t ? null : t);
+                          _applyFilters();
+                        }),
+                    )),
+                ],
+              ),
+            ),
 
           const SizedBox(height: 4),
           // 結果數量
@@ -614,7 +648,7 @@ class _EmptyResult extends StatelessWidget {
             style: const TextStyle(
               fontSize: 16, color: AppColors.textSecondary)),
           const SizedBox(height: 8),
-          const Text('苗栗縣 18 鄉鎮市長照機構',
+          const Text('請嘗試調整縣市或搜尋條件',
             style: TextStyle(fontSize: 12, color: AppColors.textHint)),
         ],
       ),
