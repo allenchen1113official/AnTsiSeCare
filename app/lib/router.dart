@@ -15,6 +15,7 @@ import 'features/resource_map/screens/resource_map_screen.dart';
 import 'features/medication/screens/medication_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 import 'features/family/screens/family_view_screen.dart';
+import 'features/navigation/screens/navigation_screen.dart';
 import 'features/home/screens/main_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -94,6 +95,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
 
       // Standalone routes
+      GoRoute(
+        path: '/navigation',
+        builder: (ctx, _) => const NavigationScreen(),
+      ),
       GoRoute(
         path: '/medication',
         builder: (ctx, _) => const MedicationScreen(),

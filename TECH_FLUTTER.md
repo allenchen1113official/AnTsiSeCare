@@ -69,7 +69,7 @@ Collection: users/{userId}
   
   // 長者專屬
   disabilityLevel: number,        // 失能等級 1-8
-  township: string,               // 苗栗縣鄉鎮市
+  township: string,               // 縣市鄉鎮
   safeZone: GeoPoint | null,      // 遊走警報圓心
   safeZoneRadius: number,         // 公尺
   
@@ -279,7 +279,7 @@ void main() async {
 {
   "app": {
     "name": "安心照護",
-    "tagline": "苗栗縣長照整合平台"
+    "tagline": "全台長照整合平台"
   },
   "nav": {
     "home": "首頁",
@@ -683,10 +683,10 @@ class LtcDataService {
     final csvStr = const Utf8Decoder().convert(response.bodyBytes);
     final rows = const CsvToListConverter(eol: '\n').convert(csvStr);
 
-    // 3. 篩選苗栗縣機構
+    // 3. 篩選全台機構
     final institutions = <LtcInstitution>[];
     for (final row in rows.skip(1)) {  // 跳過標題行
-      if (row[2].toString().startsWith('苗栗')) {
+      if (row[2].toString().isNotEmpty) {
         final inst = LtcInstitution(
           id: row[0].toString(),
           name: row[1].toString(),
@@ -802,7 +802,7 @@ class LtcDataService {
 □ 印尼語語音指引（audioplayers：Hubungi 119!）
 ```
 
-### Week 6：苗栗長照資源地圖
+### Week 6：全台長照資源地圖
 
 ```
 □ 政府 CSV 解析（LtcDataService）

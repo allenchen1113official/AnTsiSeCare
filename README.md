@@ -27,6 +27,7 @@
 | 🆘 **SOS 緊急求救** | 一鍵啟動脈衝動畫介面；顯示 119 急救、1966 長照、1955 移工三條熱線；離線可用 |
 | 💊 **用藥管理** | 建立多筆藥品排班；多語言推播提醒；記錄服藥歷史 |
 | 🗺️ **長照資源地圖** | 衛福部開放資料 + 本地快取；全台縣市下拉 + 鄉鎮 chips 篩選；A/B/C 級分類 |
+| 🧭 **導航規劃** | OpenStreetMap + OSRM 免費路線計算；三組預設路線（急診醫院 / 衛生所 / 長照中心）；一鍵開啟 Google Maps 導航 |
 | 👨‍👩‍👧 **家庭檢視** | 家屬輸入長者 ID 後即可遠端查看最新照護紀錄與生命徵象 |
 | 👤 **個人設定** | 即時切換五種語言；管理角色資訊與緊急聯絡人；離線模式設定 |
 
@@ -95,6 +96,7 @@ AnTsiSeCare/
 │   │       ├── family/           # 家庭檢視
 │   │       ├── home/             # 首頁、底部導覽列
 │   │       ├── medication/       # 用藥管理
+│   │       ├── navigation/       # OSM 導航規劃（三組預設路線）
 │   │       ├── profile/          # 個人設定
 │   │       ├── resource_map/     # 長照資源地圖（全台縣市篩選）
 │   │       └── sos/              # SOS 緊急求救
@@ -103,8 +105,8 @@ AnTsiSeCare/
 │   └── pubspec.yaml
 ├── demo/
 │   └── index.html                # 互動展示網頁（Leaflet OSM + 全台篩選）
-├── test_runner.js                 # Node.js 測試執行器（66 tests）
-├── USER_MANUAL.md                 # 完整功能操作說明（13 章）
+├── test_runner.js                 # Node.js 測試執行器（102 tests）
+├── USER_MANUAL.md                 # 完整功能操作說明（14 章）
 ├── PLANNING.md
 ├── ARCHITECTURE.md
 ├── DATABASE.md
@@ -120,7 +122,7 @@ AnTsiSeCare/
 
 ## 快速執行測試
 
-Flutter 環境未就緒時，使用 Node.js 測試執行器（共 66 項）：
+Flutter 環境未就緒時，使用 Node.js 測試執行器（共 102 項）：
 
 ```bash
 node test_runner.js
@@ -132,6 +134,7 @@ node test_runner.js
 | ltc_data_service | 19 | 全台縣市篩選、CSV 解析、關鍵字搜尋 |
 | notification_service | 11 | 多語言推播模板、placeholder 替換 |
 | care_log_model | 20 | 照護狀態、生命徵象異常判斷邊界值 |
+| navigation_feature | 47 | RoutePlan 模型、OSRM URL / JSON 解析、雙語支援 |
 
 ---
 
@@ -139,7 +142,7 @@ node test_runner.js
 
 | 文件 | 說明 |
 |------|------|
-| [USER_MANUAL.md](./USER_MANUAL.md) | 功能操作說明（13 章，使用者導向）|
+| [USER_MANUAL.md](./USER_MANUAL.md) | 功能操作說明（14 章，含導航規劃）|
 | [PLANNING.md](./PLANNING.md) | 產品規劃：角色、功能模組、全台在地化、KPI |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | 技術架構：Flutter、Firebase、OSM |
 | [DATABASE.md](./DATABASE.md) | Firestore 資料結構與索引設計 |

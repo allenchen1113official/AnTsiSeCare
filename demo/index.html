@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>安心照護 AnTsiSeCare — MVP 互動展示</title>
+<!-- Leaflet OSM -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 /* ── CSS 變數：品牌色系 ── */
 :root {
@@ -414,6 +417,10 @@ body {
             <span style="font-size:24px;">💊</span>
             <span style="font-size:13px;font-weight:600;color:var(--secondary);">用藥管理</span>
           </div>
+          <div class="quick-action" onclick="goScreen('screen-nav');initOsmMap()" style="background:rgba(0,105,92,0.1);border:1px solid rgba(0,105,92,0.3);border-radius:var(--radius);padding:14px;cursor:pointer;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:24px;">🧭</span>
+            <span style="font-size:13px;font-weight:600;color:#00695c;">導航規劃</span>
+          </div>
         </div>
         <!-- Recent logs -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
@@ -671,7 +678,57 @@ body {
     </div>
 
     <!-- ══════════════════════════════════════════════════════════════ -->
-    <!--  SCREEN 7: 個人設定                                            -->
+    <!--  SCREEN 7: OSM 導航規劃                                         -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-nav">
+      <div class="app-bar">
+        <button class="action-btn" onclick="goScreen('screen-home')">‹</button>
+        <span class="title">🧭 導航規劃</span>
+        <button class="action-btn" onclick="recalcRoutes()">↺</button>
+      </div>
+
+      <!-- Route Tabs -->
+      <div style="display:flex;border-bottom:2px solid var(--divider);">
+        <button id="rtab-0" onclick="selectRoute(0)" style="flex:1;padding:10px 4px;border:none;background:white;font-size:12px;font-weight:700;color:var(--primary);border-bottom:2px solid var(--primary);cursor:pointer;">🏥 急診醫院</button>
+        <button id="rtab-1" onclick="selectRoute(1)" style="flex:1;padding:10px 4px;border:none;background:white;font-size:12px;font-weight:600;color:var(--text-hint);cursor:pointer;">🏨 衛生所</button>
+        <button id="rtab-2" onclick="selectRoute(2)" style="flex:1;padding:10px 4px;border:none;background:white;font-size:12px;font-weight:600;color:var(--text-hint);cursor:pointer;">🏠 長照中心</button>
+      </div>
+
+      <!-- OSM Map via Leaflet -->
+      <div id="osm-map" style="flex:1;min-height:260px;background:#e8f4f8;position:relative;overflow:hidden;">
+        <!-- Leaflet will render here -->
+        <div id="map-loading" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f0f7f5;z-index:10;">
+          <div style="font-size:36px;margin-bottom:8px;">🗺️</div>
+          <div style="font-size:13px;font-weight:600;color:var(--primary);">載入 OpenStreetMap…</div>
+          <div style="font-size:11px;color:var(--text-hint);margin-top:4px;">由 OpenStreetMap 貢獻者提供</div>
+        </div>
+        <!-- Route Info Overlay -->
+        <div id="route-overlay" style="position:absolute;top:8px;left:8px;right:8px;background:rgba(255,255,255,0.95);border-radius:10px;padding:8px 12px;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+          <div id="route-overlay-title" style="font-size:13px;font-weight:700;color:var(--primary);">🏥 住家 → 台大醫院急診</div>
+          <div style="display:flex;gap:12px;margin-top:4px;">
+            <span id="route-dist" style="font-size:11px;color:var(--text-secondary);">📍 計算中…</span>
+            <span id="route-time" style="font-size:11px;color:var(--text-secondary);">⏱ 計算中…</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Route Info Card -->
+      <div style="background:white;padding:12px 16px 16px;box-shadow:0 -2px 8px rgba(0,0,0,0.08);">
+        <div id="route-dest-name" style="font-size:15px;font-weight:700;color:var(--text-primary);">台大醫院急診</div>
+        <div id="route-dest-desc" style="font-size:12px;color:var(--text-secondary);margin-top:2px;">台北市中正區中山南路 7 號 · 急診 24 小時</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+          <div id="route-badge-dist" style="background:rgba(183,28,28,0.08);border:1px solid rgba(183,28,28,0.25);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600;color:#b71c1c;">📍 3.2 km</div>
+          <div id="route-badge-time" style="background:rgba(183,28,28,0.08);border:1px solid rgba(183,28,28,0.25);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600;color:#b71c1c;">⏱ 12 分鐘</div>
+          <div style="flex:1;"></div>
+          <button id="route-call-btn" onclick="callRouteDest()" style="background:var(--primary-surface);border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--primary);cursor:pointer;">📞 02-23123456</button>
+        </div>
+        <div id="route-dest-addr" style="font-size:11px;color:var(--text-hint);margin-top:6px;">📌 台北市中正區中山南路 7 號</div>
+        <button onclick="startNavigation()" style="width:100%;margin-top:10px;padding:12px;background:#b71c1c;color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">🧭 開始導航（Google Maps / OSM）</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!--  SCREEN 8: 個人設定                                            -->
     <!-- ══════════════════════════════════════════════════════════════ -->
     <div class="screen" id="screen-profile">
       <div class="app-bar">
@@ -752,6 +809,9 @@ body {
     </button>
     <button class="nav-item" id="nav-map" onclick="navTo('screen-map','nav-map')">
       <span class="nav-icon">🗺️</span><span class="nav-label">地圖</span>
+    </button>
+    <button class="nav-item" id="nav-nav" onclick="navTo('screen-nav','nav-nav');initOsmMap()">
+      <span class="nav-icon">🧭</span><span class="nav-label">導航</span>
     </button>
     <button class="nav-item" id="nav-profile" onclick="navTo('screen-profile','nav-profile')">
       <span class="nav-icon">👤</span><span class="nav-label">設定</span>
@@ -840,7 +900,7 @@ function goScreen(id) {
   document.getElementById('bottomNav').style.display = isAuth ? 'none' : 'flex';
   // sync nav highlight
   const map = {'screen-home':'nav-home','screen-carelog':'nav-carelog',
-    'screen-sos':'nav-sos','screen-map':'nav-map','screen-profile':'nav-profile'};
+    'screen-sos':'nav-sos','screen-map':'nav-map','screen-nav':'nav-nav','screen-profile':'nav-profile'};
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if (map[id]) document.getElementById(map[id])?.classList.add('active');
 }
@@ -1156,6 +1216,163 @@ function showResourceDetail(id) {
 function refreshMap() {
   showSnack('🔄 正在從衛福部開放資料更新…');
   setTimeout(()=>showSnack('✅ 資料已更新（全台 26 間示範機構）'), 1500);
+}
+
+// ─── OSM Navigation ───────────────────────────────────────────────────────────
+const NAV_ROUTES = [
+  {
+    id: 0,
+    title: '🏥 住家 → 急診醫院',
+    titleId: 'Rumah → IGD Rumah Sakit',
+    desc: '台大醫院（國立台灣大學醫學院附設醫院）\n急診 24 小時',
+    color: '#b71c1c',
+    origin:  { name:'我的住家',   addr:'台北市大安區信義路四段1號',  lat:25.0338, lng:121.5436 },
+    dest:    { name:'台大醫院急診', addr:'台北市中正區中山南路7號',   lat:25.0426, lng:121.5122, phone:'02-23123456' },
+    dist: '3.2 km', time: '12 分鐘',
+  },
+  {
+    id: 1,
+    title: '🏨 住家 → 衛生所',
+    titleId: 'Rumah → Puskesmas',
+    desc: '台北市大安區健康服務中心\n週一至週五 08:00–17:00',
+    color: '#1565c0',
+    origin:  { name:'我的住家',          addr:'台北市大安區信義路四段1號',  lat:25.0338, lng:121.5436 },
+    dest:    { name:'大安區健康服務中心', addr:'台北市大安區建國南路二段15號', lat:25.0278, lng:121.5413, phone:'02-27551148' },
+    dist: '0.8 km', time: '4 分鐘',
+  },
+  {
+    id: 2,
+    title: '🏠 住家 → 長照中心',
+    titleId: 'Rumah → Pusat LTC',
+    desc: '台北市大安區長照旗艦整合中心（A 級）\n長照 2.0 服務資源',
+    color: '#1b5e4f',
+    origin:  { name:'我的住家',            addr:'台北市大安區信義路四段1號',  lat:25.0338, lng:121.5436 },
+    dest:    { name:'大安區長照旗艦整合中心', addr:'台北市大安區信義路四段100號', lat:25.0330, lng:121.5510, phone:'02-27001001' },
+    dist: '0.6 km', time: '3 分鐘',
+  },
+];
+
+let osmMap = null;
+let osmRouteLayer = null;
+let osmMarkers = [];
+let currentRouteIdx = 0;
+
+function initOsmMap() {
+  if (osmMap) { updateOsmRoute(currentRouteIdx); return; }
+  const mapDiv = document.getElementById('osm-map');
+  if (!mapDiv || typeof L === 'undefined') return;
+
+  // 清除 loading 覆蓋
+  const loading = document.getElementById('map-loading');
+  if (loading) loading.style.display = 'none';
+
+  osmMap = L.map('osm-map', { zoomControl: true, attributionControl: false }).setView([25.0338, 121.5436], 14);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19,
+  }).addTo(osmMap);
+  L.control.attribution({ prefix: false }).addTo(osmMap);
+  updateOsmRoute(0);
+}
+
+function updateOsmRoute(idx) {
+  const r = NAV_ROUTES[idx];
+  if (!osmMap) return;
+
+  // 清除舊圖層
+  osmMarkers.forEach(m => osmMap.removeLayer(m));
+  osmMarkers = [];
+  if (osmRouteLayer) { osmMap.removeLayer(osmRouteLayer); osmRouteLayer = null; }
+
+  // 起點標記（住家）
+  const homeIcon = L.divIcon({
+    html: `<div style="background:var(--primary);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,0.3);">🏠</div>`,
+    className: '', iconSize:[32,32], iconAnchor:[16,16],
+  });
+  const destIcon = L.divIcon({
+    html: `<div style="background:${r.color};border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,0.3);">${r.id===0?'🏥':r.id===1?'🏨':'🏠'}</div>`,
+    className: '', iconSize:[32,32], iconAnchor:[16,16],
+  });
+
+  const mOrigin = L.marker([r.origin.lat, r.origin.lng], { icon: homeIcon })
+    .bindPopup(`<b>${r.origin.name}</b><br>${r.origin.addr}`).addTo(osmMap);
+  const mDest = L.marker([r.dest.lat, r.dest.lng], { icon: destIcon })
+    .bindPopup(`<b>${r.dest.name}</b><br>${r.dest.addr}${r.dest.phone?'<br>📞 '+r.dest.phone:''}`).addTo(osmMap);
+  osmMarkers = [mOrigin, mDest];
+
+  // 從 OSRM 取得路徑
+  const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${r.origin.lng},${r.origin.lat};${r.dest.lng},${r.dest.lat}?overview=full&geometries=geojson`;
+  fetch(osrmUrl)
+    .then(res => res.json())
+    .then(data => {
+      const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+      const dist = (data.routes[0].distance / 1000).toFixed(1) + ' km';
+      const mins = Math.ceil(data.routes[0].duration / 60) + ' 分鐘';
+      osmRouteLayer = L.polyline(coords, { color: r.color, weight: 5, opacity: 0.85 }).addTo(osmMap);
+      osmMap.fitBounds(osmRouteLayer.getBounds(), { padding: [40, 40] });
+      updateRouteInfoUI(r, dist, mins);
+    })
+    .catch(() => {
+      // OSRM 失敗時用直線 + 預設值
+      osmRouteLayer = L.polyline([[r.origin.lat,r.origin.lng],[r.dest.lat,r.dest.lng]],
+        { color: r.color, weight: 4, dashArray:'8 6', opacity:0.7 }).addTo(osmMap);
+      osmMap.fitBounds([[r.origin.lat,r.origin.lng],[r.dest.lat,r.dest.lng]], { padding:[40,40] });
+      updateRouteInfoUI(r, r.dist, r.time);
+    });
+}
+
+function updateRouteInfoUI(r, dist, time) {
+  document.getElementById('route-overlay-title').textContent = r.title;
+  document.getElementById('route-dist').textContent = '📍 ' + dist;
+  document.getElementById('route-time').textContent = '⏱ ' + time;
+  document.getElementById('route-dest-name').textContent = r.dest.name;
+  document.getElementById('route-dest-desc').textContent = r.desc;
+  document.getElementById('route-dest-addr').textContent = '📌 ' + r.dest.addr;
+  document.getElementById('route-badge-dist').textContent = '📍 ' + dist;
+  document.getElementById('route-badge-time').textContent = '⏱ ' + time;
+  document.getElementById('route-badge-dist').style.color = r.color;
+  document.getElementById('route-badge-dist').style.borderColor = r.color+'66';
+  document.getElementById('route-badge-dist').style.background = r.color+'14';
+  document.getElementById('route-badge-time').style.color = r.color;
+  document.getElementById('route-badge-time').style.borderColor = r.color+'66';
+  document.getElementById('route-badge-time').style.background = r.color+'14';
+  document.getElementById('route-call-btn').textContent = r.dest.phone ? '📞 ' + r.dest.phone : '—';
+  document.querySelector('#screen-nav button[onclick="startNavigation()"]').style.background = r.color;
+}
+
+function selectRoute(idx) {
+  currentRouteIdx = idx;
+  [0,1,2].forEach(i => {
+    const btn = document.getElementById('rtab-' + i);
+    const r = NAV_ROUTES[i];
+    if (i === idx) {
+      btn.style.color = r.color;
+      btn.style.borderBottom = '2px solid ' + r.color;
+      btn.style.fontWeight = '700';
+    } else {
+      btn.style.color = 'var(--text-hint)';
+      btn.style.borderBottom = '2px solid transparent';
+      btn.style.fontWeight = '600';
+    }
+  });
+  updateOsmRoute(idx);
+}
+
+function callRouteDest() {
+  const r = NAV_ROUTES[currentRouteIdx];
+  if (r.dest.phone) showSnack(`📞 撥打 ${r.dest.phone} — ${r.dest.name}`);
+}
+
+function startNavigation() {
+  const r = NAV_ROUTES[currentRouteIdx];
+  const url = `https://www.google.com/maps/dir/?api=1&origin=${r.origin.lat},${r.origin.lng}&destination=${r.dest.lat},${r.dest.lng}&travelmode=driving`;
+  showSnack('🧭 開啟 Google Maps 導航…');
+  window.open(url, '_blank');
+}
+
+function recalcRoutes() {
+  showSnack('🔄 重新計算路徑…');
+  if (osmMap) updateOsmRoute(currentRouteIdx);
 }
 
 // ─── Profile ──────────────────────────────────────────────────────────────────

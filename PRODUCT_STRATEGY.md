@@ -13,7 +13,7 @@
 | 長照服務特約機構 | 衛福部長照司 | CSV / JSON | 每月 | A/B/C 級機構地圖 |
 | 居家服務機構清單 | 衛福部 data.gov.tw | JSON | 每季 | 居家服務配對 |
 | 健保署特約醫事機構 | 衛生福利部中央健保署 | CSV | 每月 | 就近就醫查詢 |
-| 苗栗縣政府開放資料 | 苗栗縣政府 | JSON | 不定期 | 縣府補助、活動資訊 |
+| 衛福部開放資料 | 衛生福利部 | JSON | 不定期 | 縣府補助、活動資訊 |
 | 全國地址 Geocoding | 內政部 TGOS | API | 即時 | 地址轉座標 |
 
 ### 1.2 API 串接流程設計
@@ -59,7 +59,7 @@ class LtcInstitution {
   final String id;
   final String name;
   final String county;      // 縣市
-  final String township;    // 鄉鎮市區（苗栗縣18鄉鎮）
+  final String township;    // 鄉鎮市區（全台各縣市）
   final String address;
   final String phone;
   final LtcLevel level;     // A / B / C

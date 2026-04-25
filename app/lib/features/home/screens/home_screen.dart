@@ -163,6 +163,11 @@ class HomeScreen extends StatelessWidget {
                       color: AppColors.secondary,
                       onTap: () => context.push('/medication'),
                     ),
+                    _QuickAction(
+                      icon: '🧭', label: tr('nav.title'),
+                      color: const Color(0xFF00695C),
+                      onTap: () => context.push('/navigation'),
+                    ),
                   ],
                 ),
               ),

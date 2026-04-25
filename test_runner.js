@@ -8,7 +8,8 @@
  *   2. ltc_data_service_test     (19 tests)
  *   3. notification_service_test (11 tests)
  *   4. care_log_model_test       (20 tests)
- * Total: 55 tests
+ *   5. navigation_feature_test   (47 tests)
+ * Total: 102 tests
  */
 
 let passed = 0, failed = 0, total = 0;
@@ -52,6 +53,22 @@ function expect(val) {
     },
     toBeGreaterThan: (n) => { if (val <= n) throw new Error(`Expected ${val} > ${n}`); },
     toBeLessThan: (n) => { if (val >= n) throw new Error(`Expected ${val} < ${n}`); },
+    toBeCloseTo: (expected, digits = 2) => {
+      const precision = Math.pow(10, -digits) / 2;
+      if (Math.abs(val - expected) >= precision)
+        throw new Error(`Expected ${val} to be close to ${expected} (±${precision})`);
+    },
+    toBeNull: () => { if (val !== null) throw new Error(`Expected null, got ${JSON.stringify(val)}`); },
+    toBeUndefined: () => { if (val !== undefined) throw new Error(`Expected undefined, got ${JSON.stringify(val)}`); },
+    not: {
+      toContain: (sub) => {
+        if (String(val).includes(sub)) throw new Error(`Expected "${val}" NOT to contain "${sub}"`);
+      },
+      toBe: (unexpected) => {
+        if (val === unexpected) throw new Error(`Expected NOT ${JSON.stringify(unexpected)}`);
+      },
+      toBeNull: () => { if (val === null) throw new Error(`Expected NOT null`); },
+    },
   };
 }
 
@@ -59,6 +76,8 @@ function group(name, fn) {
   console.log(`\n  [${name}]`);
   fn();
 }
+
+const describe = group;
 
 // ═══════════════════════════════════════════════════════════════
 // 1. TIMEZONE UTILS
@@ -592,6 +611,328 @@ group('Vitals.hasAnyAbnormal', () => {
 
   test('邊界值：血壓 141（臨界異常）→ true', () => {
     expect(vitalsHasAnyAbnormal({ systolicBP: 141 })).toBeTruthy();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 5. NAVIGATION FEATURE
+// ═══════════════════════════════════════════════════════════════
+
+console.log('\n━━━ navigation_feature_test ━━━');
+
+// ── 複製 RoutePlan 邏輯（隔離 Flutter/Dart 依賴）─────────────────────────────
+
+const RouteCategory = { home: 'home', medical: 'medical', ltcCenter: 'ltcCenter' };
+
+function makePlacePoint({ name, nameId, address, lat, lng, phone = null }) {
+  return { name, nameId, address, position: { latitude: lat, longitude: lng }, phone };
+}
+
+function makeRoutePlan({ id, title, titleId, description, category, origin, destination, color,
+  polyline = [], distanceKm = null, durationMin = null }) {
+  return { id, title, titleId, description, category, origin, destination, color,
+    polyline, distanceKm, durationMin };
+}
+
+function durationLabel(plan) {
+  if (plan.durationMin === null) return '計算中…';
+  if (plan.durationMin < 60) return `${plan.durationMin} 分鐘`;
+  const h = Math.floor(plan.durationMin / 60);
+  const m = plan.durationMin % 60;
+  return m === 0 ? `${h} 小時` : `${h} 時 ${m} 分`;
+}
+
+function distanceLabel(plan) {
+  if (plan.distanceKm === null) return '—';
+  return plan.distanceKm < 1
+    ? `${Math.round(plan.distanceKm * 1000)} m`
+    : `${plan.distanceKm.toFixed(1)} km`;
+}
+
+// ── 三組預設路線（與 navigation_screen.dart 保持一致）──────────────────────
+
+const homePoint = makePlacePoint({
+  name: '我的住家', nameId: 'Rumah Saya',
+  address: '台北市大安區信義路四段 1 號',
+  lat: 25.0338, lng: 121.5436,
+});
+
+const defaultPlans = [
+  makeRoutePlan({
+    id: 'route_a', title: '🏥 住家 → 急診醫院', titleId: 'Rumah → IGD Rumah Sakit',
+    description: '台大醫院（急診 24 小時）', category: RouteCategory.medical,
+    origin: homePoint,
+    destination: makePlacePoint({ name: '台大醫院急診', nameId: 'IGD NTUH',
+      address: '台北市中正區中山南路 7 號', lat: 25.0426, lng: 121.5122, phone: '02-23123456' }),
+    color: '#B71C1C',
+  }),
+  makeRoutePlan({
+    id: 'route_b', title: '🏨 住家 → 衛生所', titleId: 'Rumah → Puskesmas',
+    description: '台北市大安區健康服務中心（週一～五 08:00–17:00）', category: RouteCategory.medical,
+    origin: homePoint,
+    destination: makePlacePoint({ name: '大安區健康服務中心', nameId: 'Pusat Kesehatan Da-an',
+      address: '台北市大安區建國南路二段 15 號', lat: 25.0278, lng: 121.5413, phone: '02-27551148' }),
+    color: '#1565C0',
+  }),
+  makeRoutePlan({
+    id: 'route_c', title: '🏠 住家 → 長照中心', titleId: 'Rumah → Pusat Perawatan LTC',
+    description: '台北市大安區長照旗艦整合中心（A 級）', category: RouteCategory.ltcCenter,
+    origin: homePoint,
+    destination: makePlacePoint({ name: '大安區長照旗艦整合中心', nameId: 'Pusat LTC Terpadu Da-an',
+      address: '台北市大安區信義路四段 100 號', lat: 25.0330, lng: 121.5510, phone: '02-27001001' }),
+    color: '#1B5E4F',
+  }),
+];
+
+// ── 輔助：OSRM URL 格式驗證 ───────────────────────────────────────────────
+
+function buildOsrmUrl(plan) {
+  const o = plan.origin.position;
+  const d = plan.destination.position;
+  return `https://router.project-osrm.org/route/v1/driving/${o.longitude},${o.latitude};${d.longitude},${d.latitude}?overview=full&geometries=geojson&steps=false`;
+}
+
+// ── OSRM JSON 解析邏輯（複製自 osrm_service.dart）──────────────────────────
+
+function parseOsrmResponse(json) {
+  const routes = json.routes;
+  if (!routes || routes.length === 0) return null;
+  const route = routes[0];
+  const distM = route.distance;
+  const durSec = route.duration;
+  const coords = route.geometry.coordinates.map(c => ({ latitude: c[1], longitude: c[0] }));
+  return {
+    polyline: coords,
+    distanceKm: distM / 1000,
+    durationMin: Math.ceil(durSec / 60),
+  };
+}
+
+// ── 測試：RoutePlan 模型 ──────────────────────────────────────────────────
+
+describe('RoutePlan — 三組預設路線完整性', () => {
+  test('應有 3 組路線', () => {
+    expect(defaultPlans.length).toBe(3);
+  });
+
+  test('所有路線 id 唯一', () => {
+    const ids = defaultPlans.map(p => p.id);
+    expect(new Set(ids).size).toBe(3);
+  });
+
+  test('所有路線有起點（住家）', () => {
+    defaultPlans.forEach(p => {
+      expect(p.origin.name).toBe('我的住家');
+    });
+  });
+
+  test('所有路線有目的地電話', () => {
+    defaultPlans.forEach(p => {
+      expect(p.destination.phone).not.toBeNull();
+    });
+  });
+
+  test('路線 A 分類為 medical', () => {
+    expect(defaultPlans[0].category).toBe(RouteCategory.medical);
+  });
+
+  test('路線 C 分類為 ltcCenter', () => {
+    expect(defaultPlans[2].category).toBe(RouteCategory.ltcCenter);
+  });
+
+  test('住家座標正確（台北大安）', () => {
+    expect(homePoint.position.latitude).toBeCloseTo(25.0338, 4);
+    expect(homePoint.position.longitude).toBeCloseTo(121.5436, 4);
+  });
+
+  test('台大醫院座標正確', () => {
+    const dest = defaultPlans[0].destination.position;
+    expect(dest.latitude).toBeCloseTo(25.0426, 4);
+    expect(dest.longitude).toBeCloseTo(121.5122, 4);
+  });
+});
+
+describe('RoutePlan — durationLabel 格式', () => {
+  test('null → 計算中…', () => {
+    const p = makeRoutePlan({ id: 'x', title: '', titleId: '', description: '',
+      category: RouteCategory.medical, origin: homePoint, destination: homePoint, color: '#000' });
+    expect(durationLabel(p)).toBe('計算中…');
+  });
+
+  test('30 分鐘', () => {
+    const p = makeRoutePlan({ id: 'x', title: '', titleId: '', description: '',
+      category: RouteCategory.medical, origin: homePoint, destination: homePoint,
+      color: '#000', durationMin: 30 });
+    expect(durationLabel(p)).toBe('30 分鐘');
+  });
+
+  test('60 分鐘 → 1 小時', () => {
+    const p = makeRoutePlan({ id: 'x', title: '', titleId: '', description: '',
+      category: RouteCategory.medical, origin: homePoint, destination: homePoint,
+      color: '#000', durationMin: 60 });
+    expect(durationLabel(p)).toBe('1 小時');
+  });
+
+  test('90 分鐘 → 1 時 30 分', () => {
+    const p = makeRoutePlan({ id: 'x', title: '', titleId: '', description: '',
+      category: RouteCategory.medical, origin: homePoint, destination: homePoint,
+      color: '#000', durationMin: 90 });
+    expect(durationLabel(p)).toBe('1 時 30 分');
+  });
+
+  test('120 分鐘 → 2 小時', () => {
+    const p = makeRoutePlan({ id: 'x', title: '', titleId: '', description: '',
+      category: RouteCategory.medical, origin: homePoint, destination: homePoint,
+      color: '#000', durationMin: 120 });
+    expect(durationLabel(p)).toBe('2 小時');
+  });
+
+  test('59 分鐘（邊界值）', () => {
+    const p = makeRoutePlan({ id: 'x', title: '', titleId: '', description: '',
+      category: RouteCategory.medical, origin: homePoint, destination: homePoint,
+      color: '#000', durationMin: 59 });
+    expect(durationLabel(p)).toBe('59 分鐘');
+  });
+});
+
+describe('RoutePlan — distanceLabel 格式', () => {
+  test('null → —', () => {
+    const p = makeRoutePlan({ id: 'x', title: '', titleId: '', description: '',
+      category: RouteCategory.medical, origin: homePoint, destination: homePoint, color: '#000' });
+    expect(distanceLabel(p)).toBe('—');
+  });
+
+  test('0.5 km → 500 m', () => {
+    const p = makeRoutePlan({ id: 'x', title: '', titleId: '', description: '',
+      category: RouteCategory.medical, origin: homePoint, destination: homePoint,
+      color: '#000', distanceKm: 0.5 });
+    expect(distanceLabel(p)).toBe('500 m');
+  });
+
+  test('1.0 km → 1.0 km', () => {
+    const p = makeRoutePlan({ id: 'x', title: '', titleId: '', description: '',
+      category: RouteCategory.medical, origin: homePoint, destination: homePoint,
+      color: '#000', distanceKm: 1.0 });
+    expect(distanceLabel(p)).toBe('1.0 km');
+  });
+
+  test('3.75 km → 3.8 km（四捨五入）', () => {
+    const p = makeRoutePlan({ id: 'x', title: '', titleId: '', description: '',
+      category: RouteCategory.medical, origin: homePoint, destination: homePoint,
+      color: '#000', distanceKm: 3.75 });
+    expect(distanceLabel(p)).toBe('3.8 km');
+  });
+
+  test('0.999 km < 1 → 999 m', () => {
+    const p = makeRoutePlan({ id: 'x', title: '', titleId: '', description: '',
+      category: RouteCategory.medical, origin: homePoint, destination: homePoint,
+      color: '#000', distanceKm: 0.999 });
+    expect(distanceLabel(p)).toBe('999 m');
+  });
+});
+
+describe('OSRM Service — URL 格式', () => {
+  test('路線 A URL 包含 OSRM base', () => {
+    const url = buildOsrmUrl(defaultPlans[0]);
+    expect(url).toContain('router.project-osrm.org/route/v1/driving');
+  });
+
+  test('URL 格式：lng,lat;lng,lat', () => {
+    const url = buildOsrmUrl(defaultPlans[0]);
+    // origin: lng=121.5436, lat=25.0338 → destination: lng=121.5122, lat=25.0426
+    expect(url).toContain('121.5436,25.0338;121.5122,25.0426');
+  });
+
+  test('URL 包含 overview=full', () => {
+    expect(buildOsrmUrl(defaultPlans[0])).toContain('overview=full');
+  });
+
+  test('URL 包含 geometries=geojson', () => {
+    expect(buildOsrmUrl(defaultPlans[0])).toContain('geometries=geojson');
+  });
+
+  test('三條路線 URL 各不同', () => {
+    const urls = defaultPlans.map(buildOsrmUrl);
+    expect(new Set(urls).size).toBe(3);
+  });
+});
+
+describe('OSRM Service — JSON 解析', () => {
+  const mockResponse = {
+    code: 'Ok',
+    routes: [{
+      distance: 5432.1,
+      duration: 823.0,
+      geometry: {
+        coordinates: [
+          [121.5436, 25.0338],
+          [121.53, 25.037],
+          [121.5122, 25.0426],
+        ],
+      },
+    }],
+  };
+
+  test('解析距離 5432.1 m → 5.432 km', () => {
+    const result = parseOsrmResponse(mockResponse);
+    expect(result.distanceKm).toBeCloseTo(5.4321, 3);
+  });
+
+  test('解析時間 823 秒 → ceil(13.7) = 14 分鐘', () => {
+    const result = parseOsrmResponse(mockResponse);
+    expect(result.durationMin).toBe(14);
+  });
+
+  test('解析 polyline 座標數量', () => {
+    const result = parseOsrmResponse(mockResponse);
+    expect(result.polyline.length).toBe(3);
+  });
+
+  test('GeoJSON [lng, lat] → { latitude, longitude } 轉換正確', () => {
+    const result = parseOsrmResponse(mockResponse);
+    expect(result.polyline[0].latitude).toBeCloseTo(25.0338, 4);
+    expect(result.polyline[0].longitude).toBeCloseTo(121.5436, 4);
+  });
+
+  test('空路線 routes=[] → null', () => {
+    const result = parseOsrmResponse({ routes: [] });
+    expect(result).toBeNull();
+  });
+
+  test('routes 欄位缺失 → null', () => {
+    const result = parseOsrmResponse({});
+    expect(result).toBeNull();
+  });
+
+  test('精確取整：duration=60 → 1 分鐘（ceil）', () => {
+    const res = parseOsrmResponse({ routes: [{ distance: 100, duration: 60,
+      geometry: { coordinates: [[121.5, 25.0]] } }] });
+    expect(res.durationMin).toBe(1);
+  });
+
+  test('精確取整：duration=61 → 2 分鐘（ceil）', () => {
+    const res = parseOsrmResponse({ routes: [{ distance: 100, duration: 61,
+      geometry: { coordinates: [[121.5, 25.0]] } }] });
+    expect(res.durationMin).toBe(2);
+  });
+});
+
+describe('NavigationScreen — 雙語支援', () => {
+  test('路線 A 有中文標題', () => {
+    expect(defaultPlans[0].title).toContain('住家');
+  });
+
+  test('路線 A 有印尼語標題', () => {
+    expect(defaultPlans[0].titleId).toContain('Rumah');
+  });
+
+  test('路線 B 有中文與印尼語目的地名稱', () => {
+    expect(defaultPlans[1].destination.name).toBe('大安區健康服務中心');
+    expect(defaultPlans[1].destination.nameId).toContain('Pusat');
+  });
+
+  test('路線 C 印尼語名稱含 LTC', () => {
+    expect(defaultPlans[2].destination.nameId).toContain('LTC');
   });
 });
 

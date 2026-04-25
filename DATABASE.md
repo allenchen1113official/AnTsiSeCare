@@ -103,7 +103,7 @@ model ElderProfile {
   idNumberEncrypted String?                 // 身分證號（加密）
   birthDate       DateTime
   gender          Gender
-  township        String                    // 苗栗縣鄉鎮市
+  township        String                    // 縣市鄉鎮
   addressEncrypted String?                  // 地址（加密）
   photo           String?                   // S3 URL
 
@@ -569,12 +569,12 @@ CREATE INDEX idx_institution_township ON institutions(township, level, is_active
 
 ---
 
-## 四、資料種子（苗栗縣初始資料）
+## 四、資料種子（全台初始資料）
 
 ```typescript
-// seed.ts - 苗栗縣18鄉鎮市初始長照資源
+// seed.ts - 全台22縣市初始長照資源
 const miaoliTownships = [
-  "苗栗市", "頭份市", "竹南鎮", "苑裡鎮", "通霄鎮",
+  "台北市", "新北市", "桃園市", "台中市", "台南市",
   "後龍鎮", "銅鑼鄉", "三義鄉", "西湖鄉", "造橋鄉",
   "頭屋鄉", "公館鄉", "大湖鄉", "泰安鄉", "南庄鄉",
   "獅潭鄉", "三灣鄉", "卓蘭鎮"

@@ -74,12 +74,12 @@
 ## 二、長照資源 API（Resources）
 
 ### GET `/api/v1/resources`
-查詢苗栗縣長照資源（公開端點）
+查詢全台長照資源（公開端點）
 
 **Query Parameters:**
 | 參數 | 類型 | 說明 |
 |------|------|------|
-| township | string | 鄉鎮市名稱（如：苗栗市） |
+| township | string | 鄉鎮市名稱（如：台北市大安區） |
 | level | A \| B \| C | 機構等級 |
 | serviceType | string | 服務類型 |
 | lat | float | 目前緯度（距離排序用） |
@@ -94,10 +94,10 @@
   "data": [
     {
       "id": "inst_001",
-      "name": "苗栗市長照A級旗艦服務中心",
+      "name": "台北市大安區長照A級旗艦服務中心",
       "level": "A",
-      "township": "苗栗市",
-      "address": "苗栗市中正路 100 號",
+      "township": "大安區",
+      "address": "台北市大安區信義路 100 號",
       "phone": "037-123456",
       "lat": 24.5678,
       "lng": 120.8234,
@@ -139,7 +139,7 @@
       "elder": {
         "id": "elder_001",
         "name": "陳阿婆",
-        "township": "苗栗市"
+        "township": "大安區"
       },
       "status": "ACTIVE",
       "startDate": "2026-01-01",
@@ -219,7 +219,7 @@
   "selfPayEstimate": 3200,
   "additionalSubsidies": [
     {
-      "name": "苗栗縣低收入戶額外補助",
+      "name": "各縣市低收入戶額外補助",
       "amount": 2000
     }
   ]

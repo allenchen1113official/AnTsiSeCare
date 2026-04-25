@@ -1,6 +1,6 @@
 # AnTsiSeCare — iOS 上架完整說明
 
-**Bundle ID：** `tw.miaoli.antsicare`  
+**Bundle ID：** `tw.antsicare.app`  
 **最低 iOS 版本：** 13.0  
 **目標裝置：** iPhone / iPad（直式）
 
@@ -51,7 +51,7 @@ pod --version
 3. 點擊 **＋** 建立新 App ID
 4. 填入：
    - **Description：** AnTsiSeCare
-   - **Bundle ID：** `tw.miaoli.antsicare`（Explicit）
+   - **Bundle ID：** `tw.antsicare.app`（Explicit）
 5. 啟用以下 Capabilities：
    - ✅ Push Notifications
    - ✅ Sign In with Apple（可選）
@@ -61,7 +61,7 @@ pod --version
 
 ```
 類型：App Store Distribution
-App ID：tw.miaoli.antsicare
+App ID：tw.antsicare.app
 憑證：選擇您的 Distribution Certificate
 名稱：AnTsiSeCare_AppStore
 ```
@@ -85,7 +85,7 @@ App ID：tw.miaoli.antsicare
 1. 前往 [Firebase Console](https://console.firebase.google.com)
 2. 選擇專案 `antsicare-miaoli`
 3. **新增應用程式 → iOS**
-4. Bundle ID：`tw.miaoli.antsicare`
+4. Bundle ID：`tw.antsicare.app`
 5. App Nickname：`AnTsiSeCare iOS`
 6. App Store ID：（上架後填入）
 
@@ -125,7 +125,7 @@ static const FirebaseOptions ios = FirebaseOptions(
   messagingSenderId: '123456789',
   projectId: 'antsicare-miaoli',
   storageBucket: 'antsicare-miaoli.appspot.com',
-  iosBundleId: 'tw.miaoli.antsicare',
+  iosBundleId: 'tw.antsicare.app',
 );
 ```
 
@@ -150,7 +150,7 @@ open ios/Runner.xcworkspace   # 注意：用 .xcworkspace，非 .xcodeproj
 
 ```
 Team：          [您的 Apple Developer Team]
-Bundle Identifier：tw.miaoli.antsicare
+Bundle Identifier：tw.antsicare.app
 Provisioning Profile：AnTsiSeCare_AppStore
 Signing Certificate：Apple Distribution
 ```
@@ -304,7 +304,7 @@ xcrun altool --upload-app \
 2. 填入：
    - **名稱：** 安心照護
    - **主要語言：** 繁體中文
-   - **Bundle ID：** tw.miaoli.antsicare
+   - **Bundle ID：** tw.antsicare.app
    - **SKU：** antsicare-miaoli-2026
 
 ### 8.2 App 資訊填寫
@@ -314,21 +314,21 @@ xcrun altool --upload-app \
 副分類：社交
 
 名稱：安心照護 AnTsiSeCare
-副標題：苗栗縣長照服務整合
+副標題：全台長照服務整合
 
 關鍵字：
-  長照,照護,照服員,失能,安心照護,苗栗,
+  長照,照護,照服員,失能,安心照護,全台,
   perawatan,caregiver,lansia,Indonesia
 
 描述（中文 4000字以內）：
-安心照護（AnTsiSeCare）是專為苗栗縣長照服務設計的整合 APP，
+安心照護（AnTsiSeCare）是專為全台長照服務設計的整合 APP，
 以印尼語照服員為優先使用族群，提供中文 / 印尼語雙語介面。
 
 主要功能：
 • 照護日誌：12 項照護圖示記錄 + 生命跡象輸入 + 語音備註
 • AI 翻譯：Claude AI 自動將印尼語照護備註翻譯成中文供家屬閱讀
 • SOS 緊急通報：一鍵撥打 119，GPS 位置即時傳送家屬
-• 長照資源地圖：苗栗縣 18 鄉鎮長照機構搜尋（ABC 三級）
+• 長照資源地圖：全台 22 縣市長照機構搜尋（ABC 三級）
 • 用藥管理：每日排程 + 服藥記錄 + 多語言提醒通知
 • 離線支援：偏鄉無網路時仍可記錄，上線後自動同步
 ```
@@ -467,7 +467,7 @@ workflows:
       flutter: stable
       xcode: latest
       vars:
-        BUNDLE_ID: tw.miaoli.antsicare
+        BUNDLE_ID: tw.antsicare.app
       groups:
         - app_store_credentials
         - firebase_credentials

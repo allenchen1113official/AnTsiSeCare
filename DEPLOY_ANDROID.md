@@ -1,6 +1,6 @@
 # AnTsiSeCare — Android 上架完整說明
 
-**Application ID：** `tw.miaoli.antsicare`  
+**Application ID：** `tw.antsicare.app`  
 **最低 API Level：** 21（Android 5.0 Lollipop）  
 **目標 API Level：** 34（Android 14）  
 **架構：** arm64-v8a, armeabi-v7a, x86_64
@@ -64,7 +64,7 @@ flutter doctor --android-licenses
 
 ```
 應用程式類別：醫療
-標記（Tags）：長照, 照護, 移工, 印尼語, 苗栗
+標記（Tags）：長照, 照護, 移工, 印尼語, 全台
 ```
 
 ---
@@ -76,7 +76,7 @@ flutter doctor --android-licenses
 1. 前往 [Firebase Console](https://console.firebase.google.com)
 2. 專案 `antsicare-miaoli` → **新增應用程式 → Android**
 3. 填入：
-   - **Android 套件名稱：** `tw.miaoli.antsicare`
+   - **Android 套件名稱：** `tw.antsicare.app`
    - **應用程式暱稱：** AnTsiSeCare Android
    - **偵錯用簽署憑證 SHA-1：**（見下方取得方式）
 
@@ -138,7 +138,7 @@ android {
     kotlinOptions { jvmTarget = '17' }
 
     defaultConfig {
-        applicationId "tw.miaoli.antsicare"
+        applicationId "tw.antsicare.app"
         minSdkVersion 21
         targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
@@ -384,7 +384,7 @@ Play Console → 應用程式 → 測試 → 內部測試
 ✅ 照護日誌：12 項照護記錄 + 生命跡象
 ✅ AI 翻譯：印尼語備註自動翻譯中文
 ✅ SOS：一鍵 119 + GPS 位置傳送
-✅ 長照資源地圖：苗栗縣 18 鄉鎮機構
+✅ 長照資源地圖：全台 22 縣市機構
 ✅ 用藥管理：每日服藥提醒
 ✅ 離線模式：偏鄉無網路仍可使用
 
@@ -403,7 +403,7 @@ Play Console → 應用程式 → 測試 → 內部測試
 ```
 應用程式名稱（30字）：安心照護 AnTsiSeCare
 簡短說明（80字）：
-苗栗縣長照整合服務，印尼語優先設計。照護日誌、SOS緊急通報、
+全台長照整合服務，印尼語優先設計。照護日誌、SOS緊急通報、
 長照機構地圖、用藥提醒，偏鄉離線可用。
 
 完整說明（4000字以內）：（詳見 App Store Connect 說明內容）
@@ -613,7 +613,7 @@ jobs:
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-          packageName: tw.miaoli.antsicare
+          packageName: tw.antsicare.app
           releaseFiles: app/build/app/outputs/bundle/release/app-release.aab
           track: internal
           changesNotSentForReview: false
