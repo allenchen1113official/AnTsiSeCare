@@ -1,7 +1,7 @@
 import 'dart:ui' show Color;
 import 'package:latlong2/latlong.dart';
 
-enum RouteCategory { home, medical, ltcCenter }
+enum RouteCategory { home, medical, ltcCenter, pharmacy, rehabilitation }
 
 class PlacePoint {
   final String name;

@@ -8,8 +8,8 @@
  *   2. ltc_data_service_test     (19 tests)
  *   3. notification_service_test (11 tests)
  *   4. care_log_model_test       (20 tests)
- *   5. navigation_feature_test   (38 tests)
- * Total: 93 tests
+ *   5. navigation_feature_test   (46 tests)
+ * Total: 112 tests
  */
 
 let passed = 0, failed = 0, total = 0;
@@ -622,7 +622,7 @@ console.log('\n━━━ navigation_feature_test ━━━');
 
 // ── 複製 RoutePlan 邏輯（隔離 Flutter/Dart 依賴）─────────────────────────────
 
-const RouteCategory = { home: 'home', medical: 'medical', ltcCenter: 'ltcCenter' };
+const RouteCategory = { home: 'home', medical: 'medical', ltcCenter: 'ltcCenter', pharmacy: 'pharmacy', rehabilitation: 'rehabilitation' };
 
 function makePlacePoint({ name, nameId, address, lat, lng, phone = null }) {
   return { name, nameId, address, position: { latitude: lat, longitude: lng }, phone };
@@ -649,7 +649,7 @@ function distanceLabel(plan) {
     : `${plan.distanceKm.toFixed(1)} km`;
 }
 
-// ── 三組預設路線（與 navigation_screen.dart 保持一致）──────────────────────
+// ── 五組預設路線（與 navigation_screen.dart 保持一致）──────────────────────
 
 const homePoint = makePlacePoint({
   name: '我的住家', nameId: 'Rumah Saya',
@@ -675,12 +675,28 @@ const defaultPlans = [
     color: '#1565C0',
   }),
   makeRoutePlan({
-    id: 'route_c', title: '🏠 住家 → 長照中心', titleId: 'Rumah → Pusat Perawatan LTC',
+    id: 'route_c', title: '🏠 住家 → 長照中心', titleId: 'Rumah → Pusat LTC',
     description: '台北市大安區長照旗艦整合中心（A 級）', category: RouteCategory.ltcCenter,
     origin: homePoint,
     destination: makePlacePoint({ name: '大安區長照旗艦整合中心', nameId: 'Pusat LTC Terpadu Da-an',
       address: '台北市大安區信義路四段 100 號', lat: 25.0330, lng: 121.5510, phone: '02-27001001' }),
     color: '#1B5E4F',
+  }),
+  makeRoutePlan({
+    id: 'route_d', title: '💊 住家 → 藥局', titleId: 'Rumah → Apotek',
+    description: '信義聯合藥局（合法藥局，週一至週六 08:30–21:00）', category: RouteCategory.pharmacy,
+    origin: homePoint,
+    destination: makePlacePoint({ name: '信義聯合藥局', nameId: 'Apotek Xinyi',
+      address: '台北市大安區信義路四段 180 號', lat: 25.0323, lng: 121.5551, phone: '02-27065580' }),
+    color: '#6A1B9A',
+  }),
+  makeRoutePlan({
+    id: 'route_e', title: '🏃 住家 → 復健診所', titleId: 'Rumah → Klinik Rehab',
+    description: '大安復健診所（物理治療 / 職能治療）', category: RouteCategory.rehabilitation,
+    origin: homePoint,
+    destination: makePlacePoint({ name: '大安復健診所', nameId: 'Klinik Rehabilitasi Da-an',
+      address: '台北市大安區仁愛路四段 285 號', lat: 25.0346, lng: 121.5494, phone: '02-27551100' }),
+    color: '#E65100',
   }),
 ];
 
@@ -710,14 +726,14 @@ function parseOsrmResponse(json) {
 
 // ── 測試：RoutePlan 模型 ──────────────────────────────────────────────────
 
-describe('RoutePlan — 三組預設路線完整性', () => {
-  test('應有 3 組路線', () => {
-    expect(defaultPlans.length).toBe(3);
+describe('RoutePlan — 五組預設路線完整性', () => {
+  test('應有 5 組路線', () => {
+    expect(defaultPlans.length).toBe(5);
   });
 
   test('所有路線 id 唯一', () => {
     const ids = defaultPlans.map(p => p.id);
-    expect(new Set(ids).size).toBe(3);
+    expect(new Set(ids).size).toBe(5);
   });
 
   test('所有路線有起點（住家）', () => {
@@ -738,6 +754,14 @@ describe('RoutePlan — 三組預設路線完整性', () => {
 
   test('路線 C 分類為 ltcCenter', () => {
     expect(defaultPlans[2].category).toBe(RouteCategory.ltcCenter);
+  });
+
+  test('路線 D 分類為 pharmacy', () => {
+    expect(defaultPlans[3].category).toBe(RouteCategory.pharmacy);
+  });
+
+  test('路線 E 分類為 rehabilitation', () => {
+    expect(defaultPlans[4].category).toBe(RouteCategory.rehabilitation);
   });
 
   test('住家座標正確（台北大安）', () => {
@@ -851,9 +875,9 @@ describe('OSRM Service — URL 格式', () => {
     expect(buildOsrmUrl(defaultPlans[0])).toContain('geometries=geojson');
   });
 
-  test('三條路線 URL 各不同', () => {
+  test('五條路線 URL 各不同', () => {
     const urls = defaultPlans.map(buildOsrmUrl);
-    expect(new Set(urls).size).toBe(3);
+    expect(new Set(urls).size).toBe(5);
   });
 });
 
@@ -933,6 +957,43 @@ describe('NavigationScreen — 雙語支援', () => {
 
   test('路線 C 印尼語名稱含 LTC', () => {
     expect(defaultPlans[2].destination.nameId).toContain('LTC');
+  });
+});
+
+describe('RoutePlan — 路線 D/E 藥局與復健診所', () => {
+  test('路線 D 目的地名稱為藥局', () => {
+    expect(defaultPlans[3].destination.name).toContain('藥局');
+  });
+
+  test('路線 D 印尼語標題含 Apotek', () => {
+    expect(defaultPlans[3].titleId).toContain('Apotek');
+  });
+
+  test('路線 D 藥局有聯絡電話', () => {
+    expect(defaultPlans[3].destination.phone).not.toBeNull();
+  });
+
+  test('路線 E 目的地名稱含復健', () => {
+    expect(defaultPlans[4].destination.name).toContain('復健');
+  });
+
+  test('路線 E 印尼語標題含 Rehab', () => {
+    expect(defaultPlans[4].titleId).toContain('Rehab');
+  });
+
+  test('路線 E 復健診所有聯絡電話', () => {
+    expect(defaultPlans[4].destination.phone).not.toBeNull();
+  });
+
+  test('路線 D/E 均以住家為起點', () => {
+    expect(defaultPlans[3].origin.name).toBe('我的住家');
+    expect(defaultPlans[4].origin.name).toBe('我的住家');
+  });
+
+  test('路線 D 藥局座標在台北大安區範圍內', () => {
+    const pos = defaultPlans[3].destination.position;
+    expect(pos.latitude).toBeCloseTo(25.0323, 2);
+    expect(pos.longitude).toBeCloseTo(121.5551, 2);
   });
 });
 
