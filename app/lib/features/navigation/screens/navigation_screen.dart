@@ -8,11 +8,13 @@ import '../../../core/theme/app_theme.dart';
 import '../models/route_plan_model.dart';
 import '../services/osrm_service.dart';
 
-// ── 三組預設地點（住家 + 醫療單位）────────────────────────────────────────────
+// ── 五組預設地點（住家 + 五個常用目的地）──────────────────────────────────────
 //
 // 路線 A：住家  → 台大醫院（急診）
 // 路線 B：住家  → 台北市大安區衛生所
 // 路線 C：住家  → 最近 A 級長照旗艦中心
+// 路線 D：住家  → 社區藥局
+// 路線 E：住家  → 復健診所
 //
 // 住家預設座標：台北市大安區（使用者可在設定中修改）
 
@@ -64,7 +66,7 @@ final List<RoutePlan> _defaultPlans = [
   RoutePlan(
     id: 'route_c',
     title: '🏠 住家 → 長照中心',
-    titleId: 'Rumah → Pusat Perawatan LTC',
+    titleId: 'Rumah → Pusat LTC',
     description: '台北市大安區長照旗艦整合中心（A 級）\n長照 2.0 服務資源',
     category: RouteCategory.ltcCenter,
     origin: _homePoint,
@@ -76,6 +78,42 @@ final List<RoutePlan> _defaultPlans = [
       phone: '02-27001001',
     ),
     color: Color(0xFF1B5E4F),  // Trust Green
+  ),
+
+  // ── 路線 D：社區藥局 ──────────────────────────────────────────────────────
+  RoutePlan(
+    id: 'route_d',
+    title: '💊 住家 → 藥局',
+    titleId: 'Rumah → Apotek',
+    description: '信義聯合藥局（合法藥局）\n週一至週六 08:30–21:00',
+    category: RouteCategory.pharmacy,
+    origin: _homePoint,
+    destination: const PlacePoint(
+      name: '信義聯合藥局',
+      nameId: 'Apotek Xinyi',
+      address: '台北市大安區信義路四段 180 號',
+      position: LatLng(25.0323, 121.5551),
+      phone: '02-27065580',
+    ),
+    color: Color(0xFF6A1B9A),  // Pharmacy Purple
+  ),
+
+  // ── 路線 E：復健診所 ──────────────────────────────────────────────────────
+  RoutePlan(
+    id: 'route_e',
+    title: '🏃 住家 → 復健診所',
+    titleId: 'Rumah → Klinik Rehab',
+    description: '大安復健診所（物理治療 / 職能治療）\n週一至週五 08:00–17:30',
+    category: RouteCategory.rehabilitation,
+    origin: _homePoint,
+    destination: const PlacePoint(
+      name: '大安復健診所',
+      nameId: 'Klinik Rehabilitasi Da-an',
+      address: '台北市大安區仁愛路四段 285 號',
+      position: LatLng(25.0346, 121.5494),
+      phone: '02-27551100',
+    ),
+    color: Color(0xFFE65100),  // Rehab Orange
   ),
 ];
 
@@ -164,8 +202,10 @@ class _NavigationScreenState extends State<NavigationScreen>
         ],
         bottom: TabBar(
           controller: _tabCtrl,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
           tabs: _plans.map((p) => Tab(
-            text: isIndonesian ? p.titleId.split('→').first.trim() : p.title.split('→').first.trim(),
+            text: isIndonesian ? p.titleId.split('→').last.trim() : p.title.split('→').last.trim(),
           )).toList(),
           labelColor: AppColors.primary,
           unselectedLabelColor: AppColors.textSecondary,
@@ -286,9 +326,11 @@ class _NavigationScreenState extends State<NavigationScreen>
 
   IconData _destIcon(RouteCategory cat) {
     switch (cat) {
-      case RouteCategory.medical: return Icons.local_hospital_rounded;
-      case RouteCategory.ltcCenter: return Icons.elderly_rounded;
-      default: return Icons.place_rounded;
+      case RouteCategory.medical:       return Icons.local_hospital_rounded;
+      case RouteCategory.ltcCenter:     return Icons.elderly_rounded;
+      case RouteCategory.pharmacy:      return Icons.local_pharmacy_rounded;
+      case RouteCategory.rehabilitation: return Icons.accessibility_new_rounded;
+      default:                          return Icons.place_rounded;
     }
   }
 
