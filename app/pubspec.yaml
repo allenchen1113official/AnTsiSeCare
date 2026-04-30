@@ -77,6 +77,9 @@ dependencies:
   # Apple Watch / Google Health Connect — 心率監測
   health: ^10.2.0
 
+  # 小米手環 BLE 直連心率監測
+  flutter_blue_plus: ^1.32.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

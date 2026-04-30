@@ -10,7 +10,8 @@
  *   4. care_log_model_test       (20 tests)
  *   5. navigation_feature_test   (46 tests)
  *   6. heart_rate_test           (28 tests)
- * Total: 140 tests
+ *   7. mi_band_test              (26 tests)
+ * Total: 166 tests
  */
 
 let passed = 0, failed = 0, total = 0;
@@ -1219,6 +1220,203 @@ describe('HeartRateService — shouldAlert 異常判斷', () => {
 
   test('邊界 100 BPM 不觸發警報', () => {
     expect(shouldAlert(makeReading({ bpm: 100 }))).toBe(false);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 7. MI BAND (BLE)
+// ═══════════════════════════════════════════════════════════════
+
+console.log('\n━━━ mi_band_test ━━━');
+
+// ── MiBandDevice 模型（複製自 mi_band_device.dart）──────────────────────────
+
+const MiBandConnectionState = {
+  disconnected: 'disconnected', scanning: 'scanning',
+  connecting: 'connecting', connected: 'connected', error: 'error',
+};
+
+function makeMiBandDevice({ deviceId, deviceName, rssi, connectionState = MiBandConnectionState.disconnected }) {
+  const lower = (deviceName || '').toLowerCase();
+  const isFromWatch = lower.includes('watch'); // not Mi Band, so false
+  return {
+    deviceId,
+    deviceName: deviceName || '',
+    rssi,
+    connectionState,
+    get displayName() { return this.deviceName || '小米手環'; },
+    get isConnected() { return this.connectionState === MiBandConnectionState.connected; },
+    get signalLabel() {
+      if (this.rssi >= -60) return '強';
+      if (this.rssi >= -75) return '中';
+      return '弱';
+    },
+    get connectionLabel() {
+      const map = { disconnected:'未連線', scanning:'掃描中…', connecting:'連線中…', connected:'已連線', error:'連線失敗' };
+      return map[this.connectionState];
+    },
+    get connectionLabelId() {
+      const map = { disconnected:'Tidak terhubung', scanning:'Memindai…', connecting:'Menghubungkan…', connected:'Terhubung', error:'Gagal terhubung' };
+      return map[this.connectionState];
+    },
+    toMap() { return { deviceId: this.deviceId, deviceName: this.deviceName, rssi: this.rssi }; },
+  };
+}
+
+function isMiBandDevice(name) {
+  if (!name) return false;
+  const lower = name.toLowerCase();
+  return lower.includes('mi band') ||
+         lower.includes('mi smart band') ||
+         lower.includes('xiaomi smart band') ||
+         lower.includes('redmi band') ||
+         lower.includes('amazfit band');
+}
+
+// ── BLE 心率資料解析（複製自 mi_band_service.dart _onHrData）────────────────
+
+function parseHrData(data) {
+  if (!data || data.length === 0) return null;
+  const flags = data[0];
+  let bpm;
+  if ((flags & 0x01) === 0) {
+    bpm = data.length > 1 ? data[1] : 0;
+  } else {
+    bpm = data.length > 2 ? (data[1] | (data[2] << 8)) : 0;
+  }
+  return bpm > 0 ? bpm : null;
+}
+
+// ── 測試：MiBandDevice 裝置識別 ──────────────────────────────────────────────
+
+describe('MiBandDevice — 裝置名稱識別', () => {
+  test('「MI Band 4」→ 識別為小米手環', () => {
+    expect(isMiBandDevice('MI Band 4')).toBe(true);
+  });
+
+  test('「Mi Smart Band 5」→ 識別為小米手環', () => {
+    expect(isMiBandDevice('Mi Smart Band 5')).toBe(true);
+  });
+
+  test('「Xiaomi Smart Band 7」→ 識別為小米手環', () => {
+    expect(isMiBandDevice('Xiaomi Smart Band 7')).toBe(true);
+  });
+
+  test('「Xiaomi Smart Band 8 Pro」→ 識別為小米手環', () => {
+    expect(isMiBandDevice('Xiaomi Smart Band 8 Pro')).toBe(true);
+  });
+
+  test('「Redmi Band 2」→ 識別為小米手環', () => {
+    expect(isMiBandDevice('Redmi Band 2')).toBe(true);
+  });
+
+  test('「Amazfit Band 7」→ 識別為小米手環', () => {
+    expect(isMiBandDevice('Amazfit Band 7')).toBe(true);
+  });
+
+  test('「Apple Watch」→ 不識別為小米手環', () => {
+    expect(isMiBandDevice('Apple Watch')).toBe(false);
+  });
+
+  test('空字串 → 不識別', () => {
+    expect(isMiBandDevice('')).toBe(false);
+  });
+
+  test('null → 不識別', () => {
+    expect(isMiBandDevice(null)).toBe(false);
+  });
+});
+
+describe('MiBandDevice — 裝置模型屬性', () => {
+  test('displayName 使用 deviceName', () => {
+    const d = makeMiBandDevice({ deviceId: 'aa:bb', deviceName: 'Xiaomi Smart Band 7', rssi: -65 });
+    expect(d.displayName).toBe('Xiaomi Smart Band 7');
+  });
+
+  test('空 deviceName → 顯示「小米手環」', () => {
+    const d = makeMiBandDevice({ deviceId: 'aa:bb', deviceName: '', rssi: -65 });
+    expect(d.displayName).toBe('小米手環');
+  });
+
+  test('RSSI -55 dBm → 訊號強', () => {
+    const d = makeMiBandDevice({ deviceId: 'aa:bb', deviceName: 'Mi Band', rssi: -55 });
+    expect(d.signalLabel).toBe('強');
+  });
+
+  test('RSSI -70 dBm → 訊號中', () => {
+    const d = makeMiBandDevice({ deviceId: 'aa:bb', deviceName: 'Mi Band', rssi: -70 });
+    expect(d.signalLabel).toBe('中');
+  });
+
+  test('RSSI -80 dBm → 訊號弱', () => {
+    const d = makeMiBandDevice({ deviceId: 'aa:bb', deviceName: 'Mi Band', rssi: -80 });
+    expect(d.signalLabel).toBe('弱');
+  });
+
+  test('connected 狀態 → isConnected = true', () => {
+    const d = makeMiBandDevice({ deviceId: 'aa:bb', deviceName: 'Mi Band', rssi: -65,
+      connectionState: MiBandConnectionState.connected });
+    expect(d.isConnected).toBe(true);
+  });
+
+  test('disconnected 狀態 → isConnected = false', () => {
+    const d = makeMiBandDevice({ deviceId: 'aa:bb', deviceName: 'Mi Band', rssi: -65 });
+    expect(d.isConnected).toBe(false);
+  });
+
+  test('connectionLabel 中文正確', () => {
+    const d = makeMiBandDevice({ deviceId: 'aa:bb', deviceName: 'Mi Band', rssi: -65,
+      connectionState: MiBandConnectionState.connected });
+    expect(d.connectionLabel).toBe('已連線');
+  });
+
+  test('connectionLabelId 印尼語正確', () => {
+    const d = makeMiBandDevice({ deviceId: 'aa:bb', deviceName: 'Mi Band', rssi: -65,
+      connectionState: MiBandConnectionState.connected });
+    expect(d.connectionLabelId).toBe('Terhubung');
+  });
+
+  test('toMap 包含必要欄位', () => {
+    const d = makeMiBandDevice({ deviceId: 'cc:dd', deviceName: 'Xiaomi Smart Band 8', rssi: -58 });
+    const m = d.toMap();
+    expect(m.deviceId).toBe('cc:dd');
+    expect(m.deviceName).toBe('Xiaomi Smart Band 8');
+    expect(m.rssi).toBe(-58);
+  });
+});
+
+describe('MiBandService — BLE 心率資料解析（uint8）', () => {
+  test('flags=0x00, data[1]=72 → 72 BPM', () => {
+    expect(parseHrData([0x00, 72])).toBe(72);
+  });
+
+  test('flags=0x00, data[1]=110 → 110 BPM（心跳過速）', () => {
+    expect(parseHrData([0x00, 110])).toBe(110);
+  });
+
+  test('flags=0x00, data[1]=45 → 45 BPM（心跳過慢）', () => {
+    expect(parseHrData([0x00, 45])).toBe(45);
+  });
+
+  test('flags=0x01, data uint16 → 合併低高位元組', () => {
+    // bpm = data[1] | (data[2] << 8) = 100 | (0 << 8) = 100
+    expect(parseHrData([0x01, 100, 0])).toBe(100);
+  });
+
+  test('BPM=0 → 過濾無效資料（回傳 null）', () => {
+    expect(parseHrData([0x00, 0])).toBeNull();
+  });
+
+  test('空陣列 → 回傳 null', () => {
+    expect(parseHrData([])).toBeNull();
+  });
+
+  test('解析後的 BPM 可建立 HeartRateReading 並判斷異常', () => {
+    const bpm = parseHrData([0x00, 120]);
+    const reading = makeReading({ bpm, source: 'Mi Band' });
+    expect(reading.isTachycardia).toBe(true);
+    expect(reading.isFromWatch).toBe(false);
+    expect(reading.sourceIcon).toBe('📱');
   });
 });
 
