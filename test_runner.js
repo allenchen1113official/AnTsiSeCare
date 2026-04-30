@@ -9,7 +9,8 @@
  *   3. notification_service_test (11 tests)
  *   4. care_log_model_test       (20 tests)
  *   5. navigation_feature_test   (46 tests)
- * Total: 112 tests
+ *   6. heart_rate_test           (28 tests)
+ * Total: 140 tests
  */
 
 let passed = 0, failed = 0, total = 0;
@@ -994,6 +995,230 @@ describe('RoutePlan — 路線 D/E 藥局與復健診所', () => {
     const pos = defaultPlans[3].destination.position;
     expect(pos.latitude).toBeCloseTo(25.0323, 2);
     expect(pos.longitude).toBeCloseTo(121.5551, 2);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 6. HEART RATE (Apple Watch)
+// ═══════════════════════════════════════════════════════════════
+
+console.log('\n━━━ heart_rate_test ━━━');
+
+// ── HeartRateReading 模型（複製自 heart_rate_model.dart）────────────────────
+
+const HeartRateStatus = { normal: 'normal', tachycardia: 'tachycardia', bradycardia: 'bradycardia' };
+
+function heartRateStatus(bpm) {
+  if (bpm > 100) return HeartRateStatus.tachycardia;
+  if (bpm < 50)  return HeartRateStatus.bradycardia;
+  return HeartRateStatus.normal;
+}
+
+function makeReading({ bpm, source = 'Apple Watch', timestamp = new Date().toISOString() }) {
+  const status = heartRateStatus(bpm);
+  return {
+    bpm,
+    source,
+    timestamp: new Date(timestamp),
+    status,
+    isAbnormal: status !== HeartRateStatus.normal,
+    isTachycardia: status === HeartRateStatus.tachycardia,
+    isBradycardia: status === HeartRateStatus.bradycardia,
+    isFromWatch: source.toLowerCase().includes('watch'),
+    bpmLabel: `${Math.round(bpm)}`,
+    statusLabel: status === HeartRateStatus.tachycardia ? '心跳過速'
+               : status === HeartRateStatus.bradycardia  ? '心跳過慢' : '正常',
+    statusLabelId: status === HeartRateStatus.tachycardia ? 'Takikardia'
+                 : status === HeartRateStatus.bradycardia  ? 'Bradikardia' : 'Normal',
+    sourceIcon: source.toLowerCase().includes('watch') ? '⌚' : '📱',
+    toMap() { return { timestamp: this.timestamp.toISOString(), bpm, source }; },
+  };
+}
+
+function makeSummary(readings) {
+  const empty = readings.length === 0;
+  const bpms = empty ? [] : readings.map(r => r.bpm);
+  return {
+    avgBpm: empty ? null : bpms.reduce((a, b) => a + b, 0) / bpms.length,
+    maxBpm: empty ? null : Math.max(...bpms),
+    minBpm: empty ? null : Math.min(...bpms),
+    totalReadings: readings.length,
+    abnormalCount: readings.filter(r => r.isAbnormal).length,
+    avgLabel() { return this.avgBpm == null ? '—' : `${Math.round(this.avgBpm)} BPM`; },
+    maxLabel() { return this.maxBpm == null ? '—' : `${Math.round(this.maxBpm)} BPM`; },
+    minLabel() { return this.minBpm == null ? '—' : `${Math.round(this.minBpm)} BPM`; },
+  };
+}
+
+// ── 測試：HeartRateReading 狀態判斷 ─────────────────────────────────────────
+
+describe('HeartRateReading — 狀態判斷（正常 / 心跳過速 / 心跳過慢）', () => {
+  test('72 BPM → 正常', () => {
+    const r = makeReading({ bpm: 72 });
+    expect(r.status).toBe(HeartRateStatus.normal);
+    expect(r.isAbnormal).toBe(false);
+    expect(r.statusLabel).toBe('正常');
+  });
+
+  test('101 BPM → 心跳過速（tachycardia）', () => {
+    const r = makeReading({ bpm: 101 });
+    expect(r.isTachycardia).toBe(true);
+    expect(r.isAbnormal).toBe(true);
+    expect(r.statusLabel).toBe('心跳過速');
+  });
+
+  test('49 BPM → 心跳過慢（bradycardia）', () => {
+    const r = makeReading({ bpm: 49 });
+    expect(r.isBradycardia).toBe(true);
+    expect(r.isAbnormal).toBe(true);
+    expect(r.statusLabel).toBe('心跳過慢');
+  });
+
+  test('邊界值：100 BPM → 正常（不超過）', () => {
+    const r = makeReading({ bpm: 100 });
+    expect(r.status).toBe(HeartRateStatus.normal);
+    expect(r.isAbnormal).toBe(false);
+  });
+
+  test('邊界值：50 BPM → 正常（未低於）', () => {
+    const r = makeReading({ bpm: 50 });
+    expect(r.status).toBe(HeartRateStatus.normal);
+    expect(r.isAbnormal).toBe(false);
+  });
+
+  test('邊界值：100.1 BPM → 心跳過速', () => {
+    const r = makeReading({ bpm: 100.1 });
+    expect(r.isTachycardia).toBe(true);
+  });
+
+  test('邊界值：49.9 BPM → 心跳過慢', () => {
+    const r = makeReading({ bpm: 49.9 });
+    expect(r.isBradycardia).toBe(true);
+  });
+});
+
+describe('HeartRateReading — 資料來源識別', () => {
+  test('Apple Watch 來源 → isFromWatch = true', () => {
+    const r = makeReading({ bpm: 72, source: 'Apple Watch' });
+    expect(r.isFromWatch).toBe(true);
+    expect(r.sourceIcon).toBe('⌚');
+  });
+
+  test('iPhone 來源 → isFromWatch = false', () => {
+    const r = makeReading({ bpm: 72, source: 'iPhone' });
+    expect(r.isFromWatch).toBe(false);
+    expect(r.sourceIcon).toBe('📱');
+  });
+
+  test('source 含 watch（小寫）→ isFromWatch = true', () => {
+    const r = makeReading({ bpm: 80, source: 'My apple watch' });
+    expect(r.isFromWatch).toBe(true);
+  });
+
+  test('bpmLabel 為整數字串', () => {
+    const r = makeReading({ bpm: 72.8 });
+    expect(r.bpmLabel).toBe('73');
+  });
+});
+
+describe('HeartRateReading — 印尼語雙語支援', () => {
+  test('正常 → Normal', () => {
+    expect(makeReading({ bpm: 75 }).statusLabelId).toBe('Normal');
+  });
+
+  test('心跳過速 → Takikardia', () => {
+    expect(makeReading({ bpm: 120 }).statusLabelId).toBe('Takikardia');
+  });
+
+  test('心跳過慢 → Bradikardia', () => {
+    expect(makeReading({ bpm: 40 }).statusLabelId).toBe('Bradikardia');
+  });
+});
+
+describe('HeartRateReading — 序列化', () => {
+  test('toMap 包含必要欄位', () => {
+    const r = makeReading({ bpm: 72, source: 'Apple Watch', timestamp: '2026-04-30T10:00:00.000Z' });
+    const m = r.toMap();
+    expect(m.bpm).toBe(72);
+    expect(m.source).toBe('Apple Watch');
+    expect(typeof m.timestamp).toBe('string');
+  });
+
+  test('toMap timestamp 為 ISO8601', () => {
+    const r = makeReading({ bpm: 65, timestamp: '2026-04-30T08:30:00.000Z' });
+    const m = r.toMap();
+    expect(m.timestamp).toContain('2026-04-30');
+  });
+});
+
+describe('HeartRateSummary — 統計摘要', () => {
+  const readings = [
+    makeReading({ bpm: 72 }),
+    makeReading({ bpm: 110 }),  // 異常：心跳過速
+    makeReading({ bpm: 45 }),   // 異常：心跳過慢
+    makeReading({ bpm: 80 }),
+    makeReading({ bpm: 65 }),
+  ];
+
+  test('totalReadings 正確', () => {
+    const s = makeSummary(readings);
+    expect(s.totalReadings).toBe(5);
+  });
+
+  test('abnormalCount 正確（2 筆異常）', () => {
+    const s = makeSummary(readings);
+    expect(s.abnormalCount).toBe(2);
+  });
+
+  test('maxBpm 正確', () => {
+    const s = makeSummary(readings);
+    expect(s.maxBpm).toBe(110);
+  });
+
+  test('minBpm 正確', () => {
+    const s = makeSummary(readings);
+    expect(s.minBpm).toBe(45);
+  });
+
+  test('avgBpm 正確（(72+110+45+80+65)/5 = 74.4）', () => {
+    const s = makeSummary(readings);
+    expect(s.avgBpm).toBeCloseTo(74.4, 1);
+  });
+
+  test('空陣列摘要 → totalReadings=0, avgBpm=null', () => {
+    const s = makeSummary([]);
+    expect(s.totalReadings).toBe(0);
+    expect(s.avgBpm).toBeNull();
+  });
+
+  test('avgLabel 顯示 BPM 字串', () => {
+    const s = makeSummary(readings);
+    expect(s.avgLabel()).toContain('BPM');
+  });
+
+  test('空摘要 avgLabel → —', () => {
+    const s = makeSummary([]);
+    expect(s.avgLabel()).toBe('—');
+  });
+});
+
+describe('HeartRateService — shouldAlert 異常判斷', () => {
+  function shouldAlert(reading) { return reading.isAbnormal; }
+
+  test('正常心率不觸發警報', () => {
+    expect(shouldAlert(makeReading({ bpm: 80 }))).toBe(false);
+  });
+
+  test('心跳過速觸發警報', () => {
+    expect(shouldAlert(makeReading({ bpm: 130 }))).toBe(true);
+  });
+
+  test('心跳過慢觸發警報', () => {
+    expect(shouldAlert(makeReading({ bpm: 38 }))).toBe(true);
+  });
+
+  test('邊界 100 BPM 不觸發警報', () => {
+    expect(shouldAlert(makeReading({ bpm: 100 }))).toBe(false);
   });
 });
 

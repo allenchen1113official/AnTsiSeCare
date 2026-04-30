@@ -168,6 +168,11 @@ class HomeScreen extends StatelessWidget {
                       color: const Color(0xFF00695C),
                       onTap: () => context.push('/navigation'),
                     ),
+                    _QuickAction(
+                      icon: '⌚', label: tr('heart_rate.title'),
+                      color: const Color(0xFFE53935),
+                      onTap: () => context.push('/heart-rate'),
+                    ),
                   ],
                 ),
               ),

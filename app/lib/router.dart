@@ -16,6 +16,7 @@ import 'features/medication/screens/medication_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 import 'features/family/screens/family_view_screen.dart';
 import 'features/navigation/screens/navigation_screen.dart';
+import 'features/heart_rate/screens/heart_rate_screen.dart';
 import 'features/home/screens/main_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -98,6 +99,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/navigation',
         builder: (ctx, _) => const NavigationScreen(),
+      ),
+      GoRoute(
+        path: '/heart-rate',
+        builder: (ctx, _) => const HeartRateScreen(),
       ),
       GoRoute(
         path: '/medication',

@@ -74,6 +74,9 @@ dependencies:
   # HTTP (for Claude API translation)
   http: ^1.2.2
 
+  # Apple Watch / Google Health Connect — 心率監測
+  health: ^10.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
