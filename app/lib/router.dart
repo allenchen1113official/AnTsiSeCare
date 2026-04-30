@@ -17,6 +17,7 @@ import 'features/profile/screens/profile_screen.dart';
 import 'features/family/screens/family_view_screen.dart';
 import 'features/navigation/screens/navigation_screen.dart';
 import 'features/heart_rate/screens/heart_rate_screen.dart';
+import 'features/medication/screens/reminder_settings_screen.dart';
 import 'features/home/screens/main_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -107,6 +108,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/medication',
         builder: (ctx, _) => const MedicationScreen(),
+        routes: [
+          GoRoute(
+            path: 'reminders',
+            builder: (ctx, _) => const ReminderSettingsScreen(),
+          ),
+        ],
       ),
       GoRoute(
         path: '/family-view',

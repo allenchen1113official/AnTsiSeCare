@@ -2,11 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/timezone_utils.dart';
 import '../models/medication_model.dart';
+import '../models/reminder_settings.dart';
+import '../services/reminder_service.dart';
 
 class MedicationScreen extends StatelessWidget {
   const MedicationScreen({super.key});
@@ -22,6 +25,12 @@ class MedicationScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(tr('medication.title')),
         actions: [
+          // 提醒設定按鈕
+          IconButton(
+            icon: const Icon(Icons.notifications_rounded),
+            tooltip: isIndonesian ? 'Pengaturan Pengingat' : '提醒設定',
+            onPressed: () => context.push('/medication/reminders'),
+          ),
           IconButton(
             icon: const Icon(Icons.add_circle_outline_rounded),
             onPressed: () => _showAddMedDialog(context, uid),
@@ -108,7 +117,7 @@ class MedicationScreen extends StatelessWidget {
 
 // ── 用藥卡片 ──────────────────────────────────────────────────────────────────
 
-class _MedicationCard extends StatelessWidget {
+class _MedicationCard extends StatefulWidget {
   final MedicationModel medication;
   final String caregiverId;
   final bool isIndonesian;
@@ -122,7 +131,44 @@ class _MedicationCard extends StatelessWidget {
   });
 
   @override
+  State<_MedicationCard> createState() => _MedicationCardState();
+}
+
+class _MedicationCardState extends State<_MedicationCard> {
+  bool _reminderEnabled = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReminderState();
+  }
+
+  Future<void> _loadReminderState() async {
+    final settings = await ReminderService.loadSettings();
+    if (mounted) {
+      setState(() => _reminderEnabled =
+          settings.isMedicationEnabled(widget.medication.id ?? ''));
+    }
+  }
+
+  Future<void> _toggleReminder(bool value) async {
+    setState(() => _reminderEnabled = value);
+    final settings = await ReminderService.loadSettings();
+    final updated = settings.withMedicationToggle(widget.medication.id ?? '', value);
+    await ReminderService.saveSettings(updated);
+    if (value) {
+      await ReminderService.scheduleForMedication(widget.medication, updated);
+    } else {
+      await ReminderService.cancelForMedication(
+          widget.medication.id ?? '', widget.medication.reminderTimes);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final medication = widget.medication;
+    final isIndonesian = widget.isIndonesian;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -150,6 +196,25 @@ class _MedicationCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                // 鈴鐺快速開關
+                GestureDetector(
+                  onTap: () => _toggleReminder(!_reminderEnabled),
+                  child: Tooltip(
+                    message: _reminderEnabled
+                        ? (isIndonesian ? 'Matikan pengingat' : '關閉提醒')
+                        : (isIndonesian ? 'Aktifkan pengingat' : '開啟提醒'),
+                    child: Icon(
+                      _reminderEnabled
+                          ? Icons.notifications_active_rounded
+                          : Icons.notifications_off_outlined,
+                      color: _reminderEnabled
+                          ? AppColors.primary
+                          : AppColors.textHint,
+                      size: 22,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 8, vertical: 4),
@@ -388,9 +453,24 @@ class _AddMedicationSheetState extends State<_AddMedicationSheet> {
       createdAt: DateTime.now().toUtc(),
     );
 
-    await FirebaseFirestore.instance
+    final ref = await FirebaseFirestore.instance
         .collection(AppConstants.colMedicines)
         .add(med.toFirestore());
+
+    // 自動排程本機提醒通知
+    final settings = await ReminderService.loadSettings();
+    final medWithId = MedicationModel(
+      id: ref.id,
+      elderId: med.elderId,
+      name: med.name,
+      nameId: med.nameId,
+      dosage: med.dosage,
+      frequency: med.frequency,
+      reminderTimes: med.reminderTimes,
+      instructions: med.instructions,
+      createdAt: med.createdAt,
+    );
+    await ReminderService.scheduleForMedication(medWithId, settings);
 
     setState(() => _saving = false);
     if (mounted) Navigator.pop(context);

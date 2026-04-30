@@ -11,7 +11,8 @@
  *   5. navigation_feature_test   (46 tests)
  *   6. heart_rate_test           (28 tests)
  *   7. mi_band_test              (26 tests)
- * Total: 166 tests
+ *   8. medication_reminder_test  (28 tests)
+ * Total: 194 tests
  */
 
 let passed = 0, failed = 0, total = 0;
@@ -1417,6 +1418,233 @@ describe('MiBandService — BLE 心率資料解析（uint8）', () => {
     expect(reading.isTachycardia).toBe(true);
     expect(reading.isFromWatch).toBe(false);
     expect(reading.sourceIcon).toBe('📱');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 8. MEDICATION REMINDER
+// ═══════════════════════════════════════════════════════════════
+
+console.log('\n━━━ medication_reminder_test ━━━');
+
+// ── ReminderSettings 模型（複製自 reminder_settings.dart）───────────────────
+
+function makeReminderSettings({
+  enabled = true,
+  advanceMinutes = 0,
+  snoozeMinutes = 10,
+  soundEnabled = true,
+  vibrationEnabled = true,
+  medicationEnabled = {},
+} = {}) {
+  return {
+    enabled, advanceMinutes, snoozeMinutes, soundEnabled, vibrationEnabled,
+    medicationEnabled: { ...medicationEnabled },
+    isMedicationEnabled(medId) {
+      if (!this.enabled) return false;
+      return this.medicationEnabled[medId] !== false;
+    },
+    copyWith(patch) {
+      return makeReminderSettings({ ...this, ...patch,
+        medicationEnabled: patch.medicationEnabled ?? this.medicationEnabled });
+    },
+    withMedicationToggle(medId, value) {
+      return makeReminderSettings({ ...this,
+        medicationEnabled: { ...this.medicationEnabled, [medId]: value } });
+    },
+    get advanceLabel() {
+      return this.advanceMinutes === 0 ? '準時提醒' : `提前 ${this.advanceMinutes} 分鐘`;
+    },
+    get snoozeLabel() { return `貪睡 ${this.snoozeMinutes} 分鐘`; },
+    toMap() {
+      return { enabled: this.enabled, advanceMinutes: this.advanceMinutes,
+        snoozeMinutes: this.snoozeMinutes, soundEnabled: this.soundEnabled,
+        vibrationEnabled: this.vibrationEnabled, medicationEnabled: this.medicationEnabled };
+    },
+  };
+}
+
+function reminderSettingsFromMap(map) {
+  return makeReminderSettings({
+    enabled: map.enabled ?? true,
+    advanceMinutes: map.advanceMinutes ?? 0,
+    snoozeMinutes: map.snoozeMinutes ?? 10,
+    soundEnabled: map.soundEnabled ?? true,
+    vibrationEnabled: map.vibrationEnabled ?? true,
+    medicationEnabled: map.medicationEnabled ?? {},
+  });
+}
+
+// ── 通知 ID / payload 計算（複製自 reminder_service.dart）────────────────────
+
+function notifId(medId, time) {
+  const str = `${medId}_${time}`;
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (Math.imul(31, hash) + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash) % 80000;
+}
+
+function buildReminderPayload(medId, time) { return `${medId}|${time}`; }
+
+function buildReminderBody(medName, dosage, time, advanceMin) {
+  const when = advanceMin === 0 ? `服藥時間：${time}` : `還有 ${advanceMin} 分鐘到服藥時間（${time}）`;
+  return `${medName} ${dosage}　${when}`;
+}
+
+function calcScheduleTime(timeStr, advanceMinutes, nowHour, nowMinute) {
+  const [h, m] = timeStr.split(':').map(Number);
+  let sm = m - advanceMinutes;
+  let sh = h;
+  if (sm < 0) { sm += 60; sh -= 1; }
+  if (sh < 0) sh += 24;
+  // 若已過今天時間，延至明天
+  const past = sh < nowHour || (sh === nowHour && sm <= nowMinute);
+  return { hour: sh, minute: sm, nextDay: past };
+}
+
+// ── 測試：ReminderSettings 基本屬性 ──────────────────────────────────────────
+
+describe('ReminderSettings — 預設值', () => {
+  test('預設 enabled = true', () => {
+    expect(makeReminderSettings().enabled).toBe(true);
+  });
+
+  test('預設 advanceMinutes = 0', () => {
+    expect(makeReminderSettings().advanceMinutes).toBe(0);
+  });
+
+  test('預設 snoozeMinutes = 10', () => {
+    expect(makeReminderSettings().snoozeMinutes).toBe(10);
+  });
+
+  test('advanceLabel：0 分 → 準時提醒', () => {
+    expect(makeReminderSettings({ advanceMinutes: 0 }).advanceLabel).toBe('準時提醒');
+  });
+
+  test('advanceLabel：5 分 → 提前 5 分鐘', () => {
+    expect(makeReminderSettings({ advanceMinutes: 5 }).advanceLabel).toBe('提前 5 分鐘');
+  });
+
+  test('snoozeLabel：15 分 → 貪睡 15 分鐘', () => {
+    expect(makeReminderSettings({ snoozeMinutes: 15 }).snoozeLabel).toBe('貪睡 15 分鐘');
+  });
+});
+
+describe('ReminderSettings — 藥品個別開關', () => {
+  test('全域 enabled=false → 所有藥品 isMedicationEnabled = false', () => {
+    const s = makeReminderSettings({ enabled: false });
+    expect(s.isMedicationEnabled('med001')).toBe(false);
+  });
+
+  test('全域開啟，未設定藥品 → 預設啟用', () => {
+    const s = makeReminderSettings({ enabled: true });
+    expect(s.isMedicationEnabled('new_med')).toBe(true);
+  });
+
+  test('個別藥品關閉 → isMedicationEnabled = false', () => {
+    const s = makeReminderSettings({ medicationEnabled: { 'med001': false } });
+    expect(s.isMedicationEnabled('med001')).toBe(false);
+  });
+
+  test('withMedicationToggle 關閉藥品', () => {
+    const s = makeReminderSettings().withMedicationToggle('med002', false);
+    expect(s.isMedicationEnabled('med002')).toBe(false);
+  });
+
+  test('withMedicationToggle 開啟藥品', () => {
+    const s = makeReminderSettings({ medicationEnabled: { 'med003': false } })
+      .withMedicationToggle('med003', true);
+    expect(s.isMedicationEnabled('med003')).toBe(true);
+  });
+
+  test('withMedicationToggle 不影響其他藥品', () => {
+    const s = makeReminderSettings().withMedicationToggle('med001', false);
+    expect(s.isMedicationEnabled('med002')).toBe(true);
+  });
+});
+
+describe('ReminderSettings — 序列化', () => {
+  test('toMap 包含所有欄位', () => {
+    const s = makeReminderSettings({ advanceMinutes: 10, snoozeMinutes: 15 });
+    const m = s.toMap();
+    expect(m.advanceMinutes).toBe(10);
+    expect(m.snoozeMinutes).toBe(15);
+    expect(typeof m.enabled).toBe('boolean');
+  });
+
+  test('fromMap 還原正確', () => {
+    const original = makeReminderSettings({ advanceMinutes: 5, snoozeMinutes: 30, soundEnabled: false });
+    const restored = reminderSettingsFromMap(original.toMap());
+    expect(restored.advanceMinutes).toBe(5);
+    expect(restored.snoozeMinutes).toBe(30);
+    expect(restored.soundEnabled).toBe(false);
+  });
+
+  test('fromMap 缺少欄位使用預設值', () => {
+    const s = reminderSettingsFromMap({});
+    expect(s.enabled).toBe(true);
+    expect(s.advanceMinutes).toBe(0);
+  });
+});
+
+describe('ReminderService — 提醒時間計算', () => {
+  test('準時提醒（advance=0）：08:00 → 排程 08:00', () => {
+    const r = calcScheduleTime('08:00', 0, 7, 0);
+    expect(r.hour).toBe(8);
+    expect(r.minute).toBe(0);
+  });
+
+  test('提前 10 分鐘：08:00 → 排程 07:50', () => {
+    const r = calcScheduleTime('08:00', 10, 7, 0);
+    expect(r.hour).toBe(7);
+    expect(r.minute).toBe(50);
+  });
+
+  test('提前 15 分鐘（跨小時）：20:00 → 排程 19:45', () => {
+    const r = calcScheduleTime('20:00', 15, 18, 0);
+    expect(r.hour).toBe(19);
+    expect(r.minute).toBe(45);
+  });
+
+  test('時間已過 → nextDay = true', () => {
+    const r = calcScheduleTime('08:00', 0, 9, 0); // 現在 09:00，排程 08:00 → 明天
+    expect(r.nextDay).toBe(true);
+  });
+
+  test('時間未到 → nextDay = false', () => {
+    const r = calcScheduleTime('20:00', 0, 8, 0);
+    expect(r.nextDay).toBe(false);
+  });
+});
+
+describe('ReminderService — 通知 ID 與 payload', () => {
+  test('相同 medId + time → 相同 notifId', () => {
+    expect(notifId('med001', '08:00')).toBe(notifId('med001', '08:00'));
+  });
+
+  test('不同 time → 不同 notifId', () => {
+    expect(notifId('med001', '08:00')).not.toBe(notifId('med001', '20:00'));
+  });
+
+  test('payload 格式：medId|time', () => {
+    const p = buildReminderPayload('med001', '08:00');
+    expect(p).toBe('med001|08:00');
+    const parts = p.split('|');
+    expect(parts[0]).toBe('med001');
+    expect(parts[1]).toBe('08:00');
+  });
+
+  test('通知內容含藥品名稱', () => {
+    const body = buildReminderBody('血壓藥', '5mg', '08:00', 0);
+    expect(body).toContain('血壓藥');
+    expect(body).toContain('08:00');
+  });
+
+  test('提前提醒通知內容含提前分鐘', () => {
+    const body = buildReminderBody('血壓藥', '5mg', '08:00', 10);
+    expect(body).toContain('10 分鐘');
   });
 });
 

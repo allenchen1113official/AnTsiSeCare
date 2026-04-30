@@ -80,6 +80,9 @@ dependencies:
   # 小米手環 BLE 直連心率監測
   flutter_blue_plus: ^1.32.0
 
+  # 用藥提醒本機通知排程
+  flutter_local_notifications: ^17.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
